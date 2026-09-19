@@ -85,4 +85,4 @@ Mac Studio (Mac14,14), Apple M2 Ultra, 192 GB unified memory, macOS 27.0 (build 
 
 ## License
 
-MIT. See `LICENSE`.
+The code, the guard and the result files are released under the MIT License (see `LICENSE`). The report (`paper.pdf`) is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
