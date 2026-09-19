@@ -1,0 +1,72 @@
+{
+ "run_id": "20260919T130741-studio",
+ "host_tag": "studio",
+ "status": "done",
+ "updated": "2026-09-19T15:02:15",
+ "env": {
+  "macos": "27.0",
+  "macos_build": "26A428",
+  "hw_model": "Mac14,14",
+  "chip": "Apple M2 Ultra",
+  "mem_bytes": 206158430208
+ },
+ "code": {
+  "git_rev": "d525e874543591f2dc911da847b9e37d4a3a511c",
+  "git_dirty_repo": false,
+  "git_dirty_code": false,
+  "sha_scan": "8ac27c7122fcbd5028be3f139aff29388c47a4a25f47afd56dcd5aa7e164cb4e",
+  "sha_worker": "5b2140fcc7704184dc44b75e5aee3935d6c6d5828a2adf968334891d82868f7f"
+ },
+ "worker": {
+  "python": "3.12.12",
+  "torch": "2.14.0",
+  "executable": "/Users/USER/.cache/uv/builds-v0/.tmpCVySTa/bin/python"
+ },
+ "device": "mps",
+ "torch_req": "2.14.0",
+ "python_req": "3.12",
+ "worker_cmd": "uv run -q --no-project --python 3.12 --with torch==2.14.0 --with numpy python /Users/USER/Documents/GitHub/mps-boundary/worker.py --device mps '<spec>'",
+ "mem_limit_bytes": 123695058124,
+ "invocations": [
+  {
+   "started": "2026-09-19T13:07:42",
+   "argv": [
+    "scan.py",
+    "--host-tag",
+    "studio",
+    "--budget-hours",
+    "2.0"
+   ],
+   "code": {
+    "git_rev": "d525e874543591f2dc911da847b9e37d4a3a511c",
+    "git_dirty_repo": false,
+    "git_dirty_code": false,
+    "sha_scan": "8ac27c7122fcbd5028be3f139aff29388c47a4a25f47afd56dcd5aa7e164cb4e",
+    "sha_worker": "5b2140fcc7704184dc44b75e5aee3935d6c6d5828a2adf968334891d82868f7f"
+   }
+  },
+  {
+   "started": "2026-09-19T13:08:03",
+   "argv": [
+    "scan.py",
+    "--host-tag",
+    "studio",
+    "--budget-hours",
+    "2.0"
+   ],
+   "code": {
+    "git_rev": "d525e874543591f2dc911da847b9e37d4a3a511c",
+    "git_dirty_repo": false,
+    "git_dirty_code": false,
+    "sha_scan": "8ac27c7122fcbd5028be3f139aff29388c47a4a25f47afd56dcd5aa7e164cb4e",
+    "sha_worker": "5b2140fcc7704184dc44b75e5aee3935d6c6d5828a2adf968334891d82868f7f"
+   }
+  }
+ ],
+ "tol": {
+  "fp32": 1.2261421649489541e-05,
+  "fp16": 0.004211458134780279
+ },
+ "elapsed_min": 114.6,
+ "n_rows_new": 1584
+}

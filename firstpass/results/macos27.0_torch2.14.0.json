@@ -1,0 +1,200 @@
+{
+ "macos": "27.0",
+ "torch": "2.14.0",
+ "results": {
+  "conv1d_long_350k": {
+   "status": "ok",
+   "out_shape": [
+    1,
+    32,
+    350000
+   ],
+   "fwd_rel_err": 7.963610066611254e-07,
+   "dx_rel_err": 6.390125693772397e-07,
+   "dw_rel_err": 1.6108924344086623e-05,
+   "wall_sec": 1.57
+  },
+  "conv1d_long_640k": {
+   "status": "ok",
+   "out_shape": [
+    1,
+    16,
+    640000
+   ],
+   "fwd_rel_err": 8.247956362612254e-07,
+   "dx_rel_err": 7.100074124773863e-07,
+   "dw_rel_err": 1.925137781663327e-05,
+   "wall_sec": 0.51
+  },
+  "conv_transpose1d_long": {
+   "status": "ok",
+   "out_shape": [
+    1,
+    32,
+    400000
+   ],
+   "fwd_rel_err": 5.193089452004428e-07,
+   "dx_rel_err": 1.1816322358727004e-06,
+   "dw_rel_err": 1.0186139323136221e-05,
+   "wall_sec": 0.48
+  },
+  "conv1d_out_channels_70k": {
+   "status": "ok",
+   "out_shape": [
+    2,
+    70000,
+    32
+   ],
+   "fwd_rel_err": 1.968197988121138e-07,
+   "dx_rel_err": 5.089494806556424e-06,
+   "dw_rel_err": 1.6127786256513408e-07,
+   "wall_sec": 0.32
+  },
+  "conv2d_wide": {
+   "status": "ok",
+   "out_shape": [
+    1,
+    8,
+    2,
+    100000
+   ],
+   "fwd_rel_err": 2.147107034502364e-07,
+   "dx_rel_err": 2.8649610903904393e-07,
+   "dw_rel_err": 1.1433415633137863e-06,
+   "wall_sec": 0.26
+  },
+  "bmm_over_2pow32": {
+   "status": "ok",
+   "numel": 4492099584,
+   "numel_over_2pow32": 1.0458984375,
+   "sec": 0.9,
+   "rel_err_by_batch": {
+    "0": 0.0,
+    "34272": 0.0,
+    "68543": 0.0
+   },
+   "wall_sec": 0.96
+  },
+  "bmm_over_2pow32_kT_view": {
+   "status": "WRONG",
+   "numel_over_2pow32": 1.000244140625,
+   "rel_err_by_batch": {
+    "0": 1.4302021553809374,
+    "65551": 1.3236869185869002
+   },
+   "wall_sec": 0.95
+  },
+  "bmm_over_2pow32_q_view": {
+   "status": "WRONG",
+   "rel_err_by_batch": {
+    "0": 1.5587969815290534,
+    "65551": 1.4215345660752938
+   },
+   "wall_sec": 0.93
+  },
+  "attention_distilbert_full_val": {
+   "status": "WRONG",
+   "score_numel_over_2pow32": 1.0458984375,
+   "sec": 1.83,
+   "last_batch_rel_err": 1.6067727689601436,
+   "wall_sec": 1.89
+  },
+  "sdpa_fused_full_val": {
+   "status": "ok",
+   "rel_err_by_batch": {
+    "0": 3.5240972950587183e-07,
+    "5711": 4.7342705989770754e-07
+   },
+   "wall_sec": 0.73
+  },
+  "sdpa_dropout": {
+   "status": "error",
+   "error": "NotImplementedError: scaled_dot_product_attention for MPS does not support dropout.",
+   "wall_sec": 0.06
+  },
+  "mps_tensor_cpu_generator": {
+   "status": "error",
+   "error": "RuntimeError: Expected a 'mps' device type for generator but found 'cpu'",
+   "wall_sec": 0.01
+  },
+  "matmul_transposed_lhs_after_big_alloc": {
+   "status": "ok",
+   "fresh_rel_err": 1.7195298017781938e-05,
+   "triggered_rel_err": 1.7195298017781938e-05,
+   "wall_sec": 0.39
+  },
+  "bmm_in_over_2pow32": {
+   "status": "WRONG",
+   "rel_err_by_batch": {
+    "0": 0.0,
+    "32776": 0.0,
+    "65551": 1.3882177472581936
+   },
+   "wall_sec": 0.93
+  },
+  "linear_in_over_2pow32": {
+   "status": "crash(rc=-6)",
+   "error": "'"
+  },
+  "elementwise_over_2pow32": {
+   "status": "ok",
+   "rel_err": 0.0,
+   "wall_sec": 0.9
+  },
+  "sum_over_2pow32": {
+   "status": "error",
+   "error": "NotImplementedError: MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4296015872)",
+   "wall_sec": 0.06
+  },
+  "transpose_contiguous_over_2pow32": {
+   "status": "ok",
+   "rel_err_by_batch": {
+    "0": 0.0,
+    "65551": 0.0
+   },
+   "wall_sec": 0.76
+  },
+  "cat_over_2pow32": {
+   "status": "ok",
+   "rel_err": 0.0,
+   "wall_sec": 0.62
+  },
+  "index_over_2pow32": {
+   "status": "WRONG",
+   "rel_err": 1.0,
+   "wall_sec": 2.47
+  },
+  "masked_fill_over_2pow32": {
+   "status": "error",
+   "error": "RuntimeError: masked_fill not supported for tensors of more than 2**32 elements",
+   "wall_sec": 0.06
+  },
+  "big_elementwise_over_2pow32_bytes": {
+   "status": "ok",
+   "sum": 4499999744.0,
+   "expected": 4500000000.0,
+   "wall_sec": 0.65
+  },
+  "gather_scatter_int32": {
+   "status": "ok",
+   "equal": true,
+   "wall_sec": 0.06
+  },
+  "conv2d_channels_last": {
+   "status": "ok",
+   "rel_err": 1.53502909532523e-06,
+   "out_channels_last": true,
+   "wall_sec": 0.29
+  },
+  "nonzero_native": {
+   "status": "ok",
+   "equal": true,
+   "wall_sec": 0.08
+  },
+  "bf16_matmul": {
+   "status": "ok",
+   "rel_err": 0.0031790042101488194,
+   "wall_sec": 0.11
+  }
+ }
+}

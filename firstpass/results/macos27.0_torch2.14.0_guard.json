@@ -1,0 +1,175 @@
+{
+ "macos": "27.0",
+ "torch": "2.14.0",
+ "results": {
+  "conv1d_long_350k": {
+   "status": "ok",
+   "out_shape": [
+    1,
+    32,
+    350000
+   ],
+   "fwd_rel_err": 7.963610066611254e-07,
+   "dx_rel_err": 6.390125693772397e-07,
+   "dw_rel_err": 1.6108924344086623e-05,
+   "wall_sec": 0.85
+  },
+  "conv1d_long_640k": {
+   "status": "ok",
+   "out_shape": [
+    1,
+    16,
+    640000
+   ],
+   "fwd_rel_err": 8.247956362612254e-07,
+   "dx_rel_err": 7.100074124773863e-07,
+   "dw_rel_err": 1.925137781663327e-05,
+   "wall_sec": 0.8
+  },
+  "conv_transpose1d_long": {
+   "status": "ok",
+   "out_shape": [
+    1,
+    32,
+    400000
+   ],
+   "fwd_rel_err": 5.193089452004428e-07,
+   "dx_rel_err": 1.1816322358727004e-06,
+   "dw_rel_err": 1.0186139323136221e-05,
+   "wall_sec": 0.77
+  },
+  "conv1d_out_channels_70k": {
+   "status": "ok",
+   "out_shape": [
+    2,
+    70000,
+    32
+   ],
+   "fwd_rel_err": 1.968197988121138e-07,
+   "dx_rel_err": 5.089494806556424e-06,
+   "dw_rel_err": 1.6127786256513408e-07,
+   "wall_sec": 0.6
+  },
+  "conv2d_wide": {
+   "status": "ok",
+   "out_shape": [
+    1,
+    8,
+    2,
+    100000
+   ],
+   "fwd_rel_err": 2.147107034502364e-07,
+   "dx_rel_err": 2.8649610903904393e-07,
+   "dw_rel_err": 1.1433415633137863e-06,
+   "wall_sec": 0.53
+  },
+  "bmm_over_2pow32": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.bmm.default: would need a tensor with 4,492,099,584 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.46
+  },
+  "bmm_over_2pow32_kT_view": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.bmm.default: would need a tensor with 4,296,015,872 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.46
+  },
+  "bmm_over_2pow32_q_view": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.bmm.default: would need a tensor with 4,296,015,872 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.46
+  },
+  "attention_distilbert_full_val": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.bmm.default: would need a tensor with 4,492,099,584 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.46
+  },
+  "sdpa_fused_full_val": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten._scaled_dot_product_attention_math_for_mps.default: would need a tensor with 4,492,099,584 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into ",
+   "wall_sec": 0.45
+  },
+  "sdpa_dropout": {
+   "status": "error",
+   "error": "NotImplementedError: scaled_dot_product_attention for MPS does not support dropout.",
+   "wall_sec": 0.45
+  },
+  "mps_tensor_cpu_generator": {
+   "status": "error",
+   "error": "RuntimeError: Expected a 'mps' device type for generator but found 'cpu'",
+   "wall_sec": 0.4
+  },
+  "matmul_transposed_lhs_after_big_alloc": {
+   "status": "ok",
+   "fresh_rel_err": 1.7195298017781938e-05,
+   "triggered_rel_err": 1.7195298017781938e-05,
+   "wall_sec": 0.55
+  },
+  "bmm_in_over_2pow32": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.randn.default: output tensor of shape (65552, 256, 256) has 4,296,015,872 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.46
+  },
+  "linear_in_over_2pow32": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.randn.default: output tensor of shape (67125249, 64) has 4,296,015,936 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.45
+  },
+  "elementwise_over_2pow32": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.ones.default: output tensor of shape (4296015872,) has 4,296,015,872 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.46
+  },
+  "sum_over_2pow32": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.ones.default: output tensor of shape (4296015872,) has 4,296,015,872 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.46
+  },
+  "transpose_contiguous_over_2pow32": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.randn.default: output tensor of shape (65552, 256, 256) has 4,296,015,872 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.46
+  },
+  "cat_over_2pow32": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.cat.default: output tensor of shape (4296015872,) has 4,296,015,872 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.46
+  },
+  "index_over_2pow32": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.arange.default: output tensor of shape (4296015872,) has 4,296,015,872 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.46
+  },
+  "masked_fill_over_2pow32": {
+   "status": "error",
+   "error": "Over2Pow32Error: aten.zeros.default: output tensor of shape (4294967312,) has 4,294,967,312 elements (> 2**32) on MPS. Results of such ops can be silently wrong on macOS 15+; split the batch into chunks.",
+   "wall_sec": 0.46
+  },
+  "big_elementwise_over_2pow32_bytes": {
+   "status": "ok",
+   "sum": 4499999744.0,
+   "expected": 4500000000.0,
+   "wall_sec": 1.04
+  },
+  "gather_scatter_int32": {
+   "status": "ok",
+   "equal": true,
+   "wall_sec": 0.46
+  },
+  "conv2d_channels_last": {
+   "status": "ok",
+   "rel_err": 1.53502909532523e-06,
+   "out_channels_last": true,
+   "wall_sec": 0.69
+  },
+  "nonzero_native": {
+   "status": "ok",
+   "equal": true,
+   "wall_sec": 0.47
+  },
+  "bf16_matmul": {
+   "status": "ok",
+   "rel_err": 0.003462318481242014,
+   "wall_sec": 0.51
+  }
+ }
+}

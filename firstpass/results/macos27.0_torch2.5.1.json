@@ -1,0 +1,172 @@
+{
+ "macos": "27.0",
+ "torch": "2.5.1",
+ "results": {
+  "conv1d_long_350k": {
+   "status": "error",
+   "error": "NotImplementedError: Output channels > 65536 not supported at the MPS device. As a temporary fix, you can set the environment variable `PYTORCH_ENABLE_MPS_FALLBACK=1` to use the CPU as a fallback for this op. WARNING: thi",
+   "wall_sec": 0.14
+  },
+  "conv1d_long_640k": {
+   "status": "error",
+   "error": "NotImplementedError: Output channels > 65536 not supported at the MPS device. As a temporary fix, you can set the environment variable `PYTORCH_ENABLE_MPS_FALLBACK=1` to use the CPU as a fallback for this op. WARNING: thi",
+   "wall_sec": 0.13
+  },
+  "conv_transpose1d_long": {
+   "status": "ok",
+   "out_shape": [
+    1,
+    32,
+    400000
+   ],
+   "fwd_rel_err": 5.193089452004428e-07,
+   "dx_rel_err": 1.1816322358727004e-06,
+   "dw_rel_err": 1.0186139323136221e-05,
+   "wall_sec": 1.35
+  },
+  "conv1d_out_channels_70k": {
+   "status": "error",
+   "error": "NotImplementedError: Output channels > 65536 not supported at the MPS device. As a temporary fix, you can set the environment variable `PYTORCH_ENABLE_MPS_FALLBACK=1` to use the CPU as a fallback for this op. WARNING: thi",
+   "wall_sec": 0.02
+  },
+  "conv2d_wide": {
+   "status": "error",
+   "error": "NotImplementedError: Output channels > 65536 not supported at the MPS device. As a temporary fix, you can set the environment variable `PYTORCH_ENABLE_MPS_FALLBACK=1` to use the CPU as a fallback for this op. WARNING: thi",
+   "wall_sec": 0.02
+  },
+  "bmm_over_2pow32": {
+   "status": "ok",
+   "numel": 4492099584,
+   "numel_over_2pow32": 1.0458984375,
+   "sec": 0.82,
+   "rel_err_by_batch": {
+    "0": 0.0,
+    "34272": 0.0,
+    "68543": 0.0
+   },
+   "wall_sec": 0.85
+  },
+  "bmm_over_2pow32_kT_view": {
+   "status": "WRONG",
+   "numel_over_2pow32": 1.000244140625,
+   "rel_err_by_batch": {
+    "0": 1.419862428369898,
+    "65551": 1.368658636972847
+   },
+   "wall_sec": 0.81
+  },
+  "bmm_over_2pow32_q_view": {
+   "status": "WRONG",
+   "rel_err_by_batch": {
+    "0": 1.4574163215399631,
+    "65551": 1.6155844034691993
+   },
+   "wall_sec": 0.82
+  },
+  "attention_distilbert_full_val": {
+   "status": "WRONG",
+   "score_numel_over_2pow32": 1.0458984375,
+   "sec": 1.68,
+   "last_batch_rel_err": 1.1404956152272643,
+   "wall_sec": 1.71
+  },
+  "sdpa_fused_full_val": {
+   "status": "WRONG",
+   "rel_err_by_batch": {
+    "0": 1.037288221052782,
+    "5711": 9.977957859591675e-07
+   },
+   "wall_sec": 2.12
+  },
+  "sdpa_dropout": {
+   "status": "ok",
+   "out_shape": [
+    4,
+    8,
+    128,
+    64
+   ],
+   "wall_sec": 0.14
+  },
+  "mps_tensor_cpu_generator": {
+   "status": "error",
+   "error": "RuntimeError: Expected a 'mps' device type for generator but found 'cpu'",
+   "wall_sec": 0.01
+  },
+  "matmul_transposed_lhs_after_big_alloc": {
+   "status": "ok",
+   "fresh_rel_err": 9.940066263501927e-07,
+   "triggered_rel_err": 9.940066263501927e-07,
+   "wall_sec": 0.33
+  },
+  "bmm_in_over_2pow32": {
+   "status": "WRONG",
+   "rel_err_by_batch": {
+    "0": 0.0,
+    "32776": 0.0,
+    "65551": 68477325439453.125
+   },
+   "wall_sec": 0.82
+  },
+  "linear_in_over_2pow32": {
+   "status": "ok",
+   "rel_err": 1.7687683753463853e-07,
+   "wall_sec": 1.15
+  },
+  "elementwise_over_2pow32": {
+   "status": "crash(rc=-6)",
+   "error": "/AppleInternal/Library/BuildRoots/4~CV2iugCS017GRPdEjj32gfBJXr8YaxAcCWYlUuw/Library/Caches/com.apple.xbs/TemporaryDirectory.WK6jPd/Sources/MetalPerformanceShadersGraph/mpsgraph/MetalPerformanceShaders"
+  },
+  "sum_over_2pow32": {
+   "status": "crash(rc=-6)",
+   "error": "/AppleInternal/Library/BuildRoots/4~CV2iugCS017GRPdEjj32gfBJXr8YaxAcCWYlUuw/Library/Caches/com.apple.xbs/TemporaryDirectory.WK6jPd/Sources/MetalPerformanceShadersGraph/mpsgraph/MetalPerformanceShaders"
+  },
+  "transpose_contiguous_over_2pow32": {
+   "status": "ok",
+   "rel_err_by_batch": {
+    "0": 0.0,
+    "65551": 0.0
+   },
+   "wall_sec": 0.63
+  },
+  "cat_over_2pow32": {
+   "status": "crash(rc=-6)",
+   "error": "/AppleInternal/Library/BuildRoots/4~CV2SugCn9TgBfrVXOModdCDrcU2-hjAJmKRYBaA/Library/Caches/com.apple.xbs/TemporaryDirectory.nZ8QWc/Sources/MetalPerformanceShaders/MPSCore/Types/MPSNDArray.mm:831: fail"
+  },
+  "index_over_2pow32": {
+   "status": "crash(rc=-6)",
+   "error": "/AppleInternal/Library/BuildRoots/4~CV2iugCS017GRPdEjj32gfBJXr8YaxAcCWYlUuw/Library/Caches/com.apple.xbs/TemporaryDirectory.WK6jPd/Sources/MetalPerformanceShadersGraph/mpsgraph/MetalPerformanceShaders"
+  },
+  "masked_fill_over_2pow32": {
+   "status": "crash(rc=-6)",
+   "error": "/AppleInternal/Library/BuildRoots/4~CV2iugCS017GRPdEjj32gfBJXr8YaxAcCWYlUuw/Library/Caches/com.apple.xbs/TemporaryDirectory.WK6jPd/Sources/MetalPerformanceShadersGraph/mpsgraph/MetalPerformanceShaders"
+  },
+  "big_elementwise_over_2pow32_bytes": {
+   "status": "ok",
+   "sum": 4499999744.0,
+   "expected": 4500000000.0,
+   "wall_sec": 0.57
+  },
+  "gather_scatter_int32": {
+   "status": "error",
+   "error": "NotImplementedError: The operator 'aten::scatter_reduce.two_out' is not currently implemented for the MPS device. If you want this op to be added in priority during the prototype phase of this feature, please comment on h",
+   "wall_sec": 0.02
+  },
+  "conv2d_channels_last": {
+   "status": "ok",
+   "rel_err": 1.53502909532523e-06,
+   "out_channels_last": true,
+   "wall_sec": 0.29
+  },
+  "nonzero_native": {
+   "status": "ok",
+   "equal": true,
+   "wall_sec": 0.05
+  },
+  "bf16_matmul": {
+   "status": "ok",
+   "rel_err": 0.004037910989135323,
+   "wall_sec": 0.05
+  }
+ }
+}

@@ -1,0 +1,23 @@
+# demo_workload.py (L=256, batch sizes 5461 5462 8192; git d525e87 + 未 commit の demo_workload.py), 2026年 9月19日 土曜日 15時03分48秒 JST
+Using the latest cached version of the dataset since cardiffnlp/tweet_eval couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'sentiment' at /Users/USER/.cache/huggingface/datasets/cardiffnlp___tweet_eval/sentiment/0.0.0/b3a375baf0f409c77e6bc7aa35102b7b3534f8be (last modified on Sat Sep 19 14:42:11 2026).
+
+
+{"device": "mps", "model": "cardiffnlp/twitter-roberta-base-sentiment-latest", "model_rev": "3216a57f2a0d9c45a2e6c20157c20c49fb4bf9c7", "tokenizer": "cardiffnlp/twitter-roberta-base-sentiment-latest", "tokenizer_rev": "3216a57f2a0d9c45a2e6c20157c20c49fb4bf9c7", "dataset": "cardiffnlp/tweet_eval", "dataset_config": "sentiment", "split": "test", "split_size": 12284, "dataset_rev": "b3a375baf0f409c77e6bc7aa35102b7b3534f8be", "n_texts": 8192, "text_order": "dataset order, first N", "max_length": 256, "tokenization": "padding=max_length, truncation=True", "n_truncated": 0, "mean_real_tokens": 25.5277099609375, "num_heads": 12, "dtype": "fp32", "chunk": 256, "seed": 0, "bad_rel_threshold": 0.001, "grad": "torch.inference_mode(), model.eval()", "label_counts": [2603, 3987, 1602], "id2label": {"0": "negative", "1": "neutral", "2": "positive"}, "hypotheses": {"A_flat_index_wrap": "65536 = 5461*12 + 4: text 5461 head>=4 onward; B=5462 -> last text only; B=8192 -> texts 5461..8191 (~1/3)", "B_transposed_view_all": "q@k^T with k^T as transposed view: all texts broken once output > 2**32"}}
+ref mps_eager_c256: 27.2s acc=0.7195
+
+cpu check: {'n': 1000, 'wall_s': 20.36285662499722, 'threads': 16, 'selection': '0-99, N/2-50..N/2+49, N-100..N-1, 5440-5480, rest = smallest top1-top2 margin in reference', 'margin_max_in_selection': 5.183845520019531, 'c256_vs_cpu_max_rel': 5.954530504534375e-05, 'c256_vs_cpu_median_rel': 1.0021764729775896e-06, 'c256_vs_cpu_pred_changed': 0}
+B=5461 mps_eager_full: 19.7s bad=0 runs=[] max_rel=0 pred_changed=0 acc=0.7200/0.7200
+/AppleInternal/Library/BuildRoots/4~CV2SugCn9TgBfrVXOModdCDrcU2-hjAJmKRYBaA/Library/Caches/com.apple.xbs/TemporaryDirectory.nZ8QWc/Sources/MetalPerformanceShaders/MPSNDArray/Kernels/MPSNDArrayMultiaryKernel.mm:3284: failed assertion `[MPSNDArrayMatrixMultiplication encodeToCommandBuffer:] destination: [
+<MPSNDArray: 0x78559bd900>	Array: (null)	Rank: 2	OffsetBytes:0	MPSDataTypeFloat32	Device: Apple M2 Ultra	MTLBuffer: 0x785361d880	IOSurfaceBacked: NO
+- dimensionLengths        = [ 3072, 1398272, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+- sliceLengths            = [ 3072, 1398272, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+- sliceOffsets            = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+- dimensionOrder          = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ]
+- transposed sliceLengths = [ 3072, 1398272, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+- strideElements          = [ 1, 3072, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+- transposed strideElems  = [ 1, 3072, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+]	 is too large for kernel.  Encode failed.
+'
+/Users/USER/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
