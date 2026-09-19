@@ -36,6 +36,7 @@ It is a `TorchDispatchMode` that checks the inputs and outputs of every aten op.
 | `scan.py`, `worker.py` | Boundary sweep of `bmm`. `scan.py` is the driver (calibration, points around each theoretical boundary, bisection, index-encoded inputs, full comparison at the final points). `worker.py` executes one configuration in a fresh process with a pinned PyTorch version, on MPS or CUDA. |
 | `run_versions.sh`, `versions.py` | Reduced sweep for each PyTorch version, and the version-by-condition table. |
 | `demo_workload.py` | Case study on a real workload: a RoBERTa sentiment classifier with eager attention on TweetEval, one large batch against chunked execution. |
+| `workload_stats.py` | Recomputes the case-study statistics from the saved logits, without rerunning on MPS (separation of errors around the boundary position, accuracy and exact McNemar test on the affected positions, predicted-class breakdown). |
 | `firstpass/` | First-pass test suite over 26 operations and 11 PyTorch versions (`check_mps.py`, `run_matrix.sh`), the guard, its benchmark, and the minimal reproduction. |
 | `cuda_ref.py` | CUDA reference values on an A100 for the first-pass configurations (output in `results/cuda/a100_run1.log`). |
 | `wandb_log.py` | Optional logging of each run to Weights & Biases. Local JSONL is always written first. |
