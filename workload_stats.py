@@ -54,6 +54,11 @@ def main() -> None:
             "above_pred_full": np.bincount(lg[hi].argmax(1), minlength=3).tolist(),
             "above_pred_ref": np.bincount(ref[hi].argmax(1), minlength=3).tolist(),
             "above_label": np.bincount(y[hi], minlength=3).tolist(),
+            # クラスごとの精度(recall): 全テキストと、境界以降の位置だけ
+            "recall_all_ref": [float(ok_ref[y == k].mean()) for k in range(3)],
+            "recall_all_full": [float(ok_full[y == k].mean()) for k in range(3)],
+            "recall_above_ref": [float(ok_ref[hi & (y == k)].mean()) for k in range(3)],
+            "recall_above_full": [float(ok_full[hi & (y == k)].mean()) for k in range(3)],
         }
     (OUT / "stats.json").write_text(json.dumps(res, indent=1, ensure_ascii=False))
 
@@ -68,7 +73,11 @@ def main() -> None:
                "| 境界以降の内訳 | " + " | ".join(names) + " |", "|---|" + "---|" * 3,
                "| 一括実行の予測 | " + " | ".join(map(str, r["above_pred_full"])) + " |",
                "| 基準の予測 | " + " | ".join(map(str, r["above_pred_ref"])) + " |",
-               "| 正解ラベル | " + " | ".join(map(str, r["above_label"])) + " |", ""]
+               "| 正解ラベル | " + " | ".join(map(str, r["above_label"])) + " |", "",
+               "| クラスごとの精度 (recall) | " + " | ".join(names) + " |", "|---|" + "---|" * 3]
+        md += [f"| {lab} | " + " | ".join(f"{v:.3f}" for v in r[k]) + " |" for lab, k in [
+            ("全テキスト、基準", "recall_all_ref"), ("全テキスト、一括実行", "recall_all_full"),
+            ("境界以降、基準", "recall_above_ref"), ("境界以降、一括実行", "recall_above_full")]] + [""]
     (OUT / "stats.md").write_text("\n".join(md))
     print("\n".join(md))
 
