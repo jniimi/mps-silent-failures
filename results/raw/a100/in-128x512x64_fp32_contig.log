@@ -1,0 +1,35 @@
+Downloading numpy (15.9MiB)
+ Downloaded numpy
+Installed 1 package in 18ms
+# run_id=20260919T165109-a100 {'os': 'Linux', 'os_release': '6.6.122+', 'arch': 'x86_64', 'macos': '', 'macos_build': '', 'linux_distro': 'Ubuntu 24.04.1 LTS', 'hw_model': 'Google Compute Engine', 'chip': 'Intel(R) Xeon(R) CPU @ 2.20GHz', 'mem_bytes': 179370467328, 'n_cpu': 12, 'gpu_name': 'NVIDIA A100-SXM4-80GB', 'gpu_mem_bytes': 85899345920, 'gpu_driver': '580.82.07', 'gpu_mem_source': 'nvidia-smi'} worker={'python': '3.12.3', 'torch': '2.14.0+cu130', 'executable': '/root/.cache/uv/builds-v0/.tmpdkJ4Wd/bin/python', 'cuda': '13.0', 'gpu_name': 'NVIDIA A100-SXM4-80GB', 'gpu_mem_bytes': 85094825984} code=699d21d limit=host 100GiB / GPU 72GiB 
+# tol = {'fp32': 0.0001}
+[   0.1m] probe     bmm/in-128x512x64/fp32/contig/random   B=  4096 s0 full   -> ok             err=1.51e-06 bad=0/4096 wall=6.77s
+[   0.2m] probe     bmm/in-128x512x64/fp32/contig/random   B=  7168 s0 sample -> ok             err=1.3e-06 bad=0/266 wall=5.85s
+[   0.3m] probe     bmm/in-128x512x64/fp32/contig/random   B= 10240 s0 sample -> ok             err=1.29e-06 bad=0/266 wall=7.42s
+[   0.5m] probe     bmm/in-128x512x64/fp32/contig/random   B= 13312 s0 sample -> ok             err=1.25e-06 bad=0/266 wall=8.25s
+[   0.6m] probe     bmm/in-128x512x64/fp32/contig/random   B= 16382 s0 sample -> ok             err=1.22e-06 bad=0/266 wall=9.2s
+[   0.8m] probe     bmm/in-128x512x64/fp32/contig/random   B= 16383 s0 sample -> ok             err=1.21e-06 bad=0/266 wall=9.55s
+[   0.9m] probe     bmm/in-128x512x64/fp32/contig/random   B= 16384 s0 sample -> ok             err=1.33e-06 bad=0/266 wall=9.59s
+[   1.1m] probe     bmm/in-128x512x64/fp32/contig/random   B= 16385 s0 sample -> ok             err=1.33e-06 bad=0/266 wall=9.27s
+[   1.2m] probe     bmm/in-128x512x64/fp32/contig/random   B= 16386 s0 sample -> ok             err=1.31e-06 bad=0/266 wall=9.0s
+[   1.4m] probe     bmm/in-128x512x64/fp32/contig/random   B= 20480 s0 sample -> ok             err=1.19e-06 bad=0/270 wall=10.98s
+[   1.6m] probe     bmm/in-128x512x64/fp32/contig/random   B= 24576 s0 sample -> ok             err=1.13e-06 bad=0/270 wall=12.41s
+[   1.9m] probe     bmm/in-128x512x64/fp32/contig/random   B= 28672 s0 sample -> ok             err=1.26e-06 bad=0/271 wall=14.02s
+[   2.1m] probe     bmm/in-128x512x64/fp32/contig/random   B= 32766 s0 sample -> ok             err=1.23e-06 bad=0/271 wall=15.5s
+[   2.4m] probe     bmm/in-128x512x64/fp32/contig/random   B= 32767 s0 sample -> ok             err=1.32e-06 bad=0/271 wall=15.4s
+[   2.6m] probe     bmm/in-128x512x64/fp32/contig/random   B= 32768 s0 sample -> ok             err=1.21e-06 bad=0/271 wall=15.46s
+[   2.9m] probe     bmm/in-128x512x64/fp32/contig/random   B= 32769 s0 sample -> ok             err=1.19e-06 bad=0/271 wall=15.44s
+[   3.2m] probe     bmm/in-128x512x64/fp32/contig/random   B= 32770 s0 sample -> ok             err=1.45e-06 bad=0/271 wall=15.44s
+[   3.5m] probe     bmm/in-128x512x64/fp32/contig/random   B= 40960 s0 sample -> ok             err=1.29e-06 bad=0/274 wall=18.38s
+[   3.8m] probe     bmm/in-128x512x64/fp32/contig/random   B= 49152 s0 sample -> ok             err=1.17e-06 bad=0/274 wall=21.63s
+[   4.2m] probe     bmm/in-128x512x64/fp32/contig/random   B= 57344 s0 sample -> ok             err=1.27e-06 bad=0/281 wall=24.72s
+[   4.7m] probe     bmm/in-128x512x64/fp32/contig/random   B= 65534 s0 sample -> ok             err=1.19e-06 bad=0/281 wall=27.8s
+[   5.2m] probe     bmm/in-128x512x64/fp32/contig/random   B= 65535 s0 sample -> ok             err=1.26e-06 bad=0/281 wall=27.81s
+[   5.6m] probe     bmm/in-128x512x64/fp32/contig/random   B= 65536 s0 sample -> ok             err=1.19e-06 bad=0/281 wall=27.89s
+[   6.1m] probe     bmm/in-128x512x64/fp32/contig/random   B= 65537 s0 sample -> ok             err=1.19e-06 bad=0/281 wall=27.81s
+[   6.6m] probe     bmm/in-128x512x64/fp32/contig/random   B= 65538 s0 sample -> ok             err=1.45e-06 bad=0/281 wall=27.93s
+[   7.6m] final     bmm/in-128x512x64/fp32/contig/random   B= 65538 s0 full   -> ok             err=1.67e-06 bad=0/65538 wall=62.34s
+[   8.6m] final     bmm/in-128x512x64/fp32/contig/random   B= 65538 s1 full   -> ok             err=1.81e-06 bad=0/65538 wall=62.87s
+[   9.7m] final     bmm/in-128x512x64/fp32/contig/random   B= 65538 s2 full   -> ok             err=1.79e-06 bad=0/65538 wall=62.66s
+# 新規 28 実行, 9.7 分。W&B の送信完了を待つ
+-> /content/mb/results/summary/a100/20260919T165109-a100.md

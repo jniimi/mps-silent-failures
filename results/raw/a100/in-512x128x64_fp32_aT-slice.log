@@ -1,0 +1,63 @@
+Downloading numpy (15.9MiB)
+ Downloaded numpy
+Installed 1 package in 18ms
+# run_id=20260919T151112-a100 {'os': 'Linux', 'os_release': '6.6.122+', 'arch': 'x86_64', 'macos': '', 'macos_build': '', 'linux_distro': 'Ubuntu 24.04.1 LTS', 'hw_model': 'Google Compute Engine', 'chip': 'Intel(R) Xeon(R) CPU @ 2.20GHz', 'mem_bytes': 179370467328, 'n_cpu': 12, 'gpu_name': 'NVIDIA A100-SXM4-80GB', 'gpu_mem_bytes': 85899345920, 'gpu_driver': '580.82.07', 'gpu_mem_source': 'nvidia-smi'} worker={'python': '3.12.3', 'torch': '2.14.0+cu130', 'executable': '/root/.cache/uv/builds-v0/.tmp3VeOd2/bin/python', 'cuda': '13.0', 'gpu_name': 'NVIDIA A100-SXM4-80GB', 'gpu_mem_bytes': 85094825984} code=790483c limit=host 100GiB / GPU 72GiB 
+# tol = {'fp32': 0.0001}
+[   0.1m] probe     bmm/in-512x128x64/fp32/aT/random       B=  4096 s0 full   -> ok             err=7.37e-07 bad=0/4096 wall=7.37s
+[   0.2m] probe     bmm/in-512x128x64/fp32/aT/random       B=  7168 s0 sample -> ok             err=7e-07 bad=0/266 wall=6.11s
+[   0.3m] probe     bmm/in-512x128x64/fp32/aT/random       B= 10240 s0 sample -> ok             err=7.21e-07 bad=0/266 wall=6.85s
+[   0.5m] probe     bmm/in-512x128x64/fp32/aT/random       B= 13312 s0 sample -> ok             err=7.62e-07 bad=0/266 wall=8.17s
+[   0.6m] probe     bmm/in-512x128x64/fp32/aT/random       B= 16382 s0 sample -> ok             err=6.87e-07 bad=0/266 wall=9.39s
+[   0.8m] probe     bmm/in-512x128x64/fp32/aT/random       B= 16383 s0 sample -> ok             err=6.87e-07 bad=0/266 wall=8.96s
+[   0.9m] probe     bmm/in-512x128x64/fp32/aT/random       B= 16384 s0 sample -> ok             err=6.37e-07 bad=0/266 wall=9.07s
+[   1.1m] probe     bmm/in-512x128x64/fp32/aT/random       B= 16385 s0 sample -> ok             err=6.37e-07 bad=0/266 wall=9.27s
+[   1.2m] probe     bmm/in-512x128x64/fp32/aT/random       B= 16386 s0 sample -> ok             err=6.43e-07 bad=0/266 wall=9.28s
+[   1.4m] probe     bmm/in-512x128x64/fp32/aT/random       B= 20480 s0 sample -> ok             err=6.76e-07 bad=0/270 wall=10.73s
+[   1.6m] probe     bmm/in-512x128x64/fp32/aT/random       B= 24576 s0 sample -> ok             err=7.24e-07 bad=0/270 wall=12.09s
+[   1.8m] probe     bmm/in-512x128x64/fp32/aT/random       B= 28672 s0 sample -> ok             err=6.45e-07 bad=0/271 wall=13.56s
+[   2.1m] probe     bmm/in-512x128x64/fp32/aT/random       B= 32766 s0 sample -> ok             err=5.89e-07 bad=0/271 wall=15.25s
+[   2.4m] probe     bmm/in-512x128x64/fp32/aT/random       B= 32767 s0 sample -> ok             err=6.24e-07 bad=0/271 wall=15.21s
+[   2.6m] probe     bmm/in-512x128x64/fp32/aT/random       B= 32768 s0 sample -> ok             err=6.48e-07 bad=0/271 wall=15.25s
+[   2.9m] probe     bmm/in-512x128x64/fp32/aT/random       B= 32769 s0 sample -> ok             err=5.87e-07 bad=0/271 wall=15.18s
+[   3.1m] probe     bmm/in-512x128x64/fp32/aT/random       B= 32770 s0 sample -> ok             err=6.05e-07 bad=0/271 wall=15.24s
+[   3.4m] probe     bmm/in-512x128x64/fp32/aT/random       B= 40960 s0 sample -> ok             err=5.67e-07 bad=0/274 wall=18.2s
+[   3.8m] probe     bmm/in-512x128x64/fp32/aT/random       B= 49152 s0 sample -> ok             err=6.29e-07 bad=0/274 wall=21.52s
+[   4.2m] probe     bmm/in-512x128x64/fp32/aT/random       B= 57344 s0 sample -> ok             err=6.28e-07 bad=0/281 wall=24.59s
+[   4.6m] probe     bmm/in-512x128x64/fp32/aT/random       B= 65534 s0 sample -> ok             err=6.38e-07 bad=0/281 wall=27.59s
+[   5.1m] probe     bmm/in-512x128x64/fp32/aT/random       B= 65535 s0 sample -> ok             err=6.38e-07 bad=0/281 wall=27.74s
+[   5.6m] probe     bmm/in-512x128x64/fp32/aT/random       B= 65536 s0 sample -> ok             err=6.28e-07 bad=0/281 wall=27.29s
+[   6.0m] probe     bmm/in-512x128x64/fp32/aT/random       B= 65537 s0 sample -> ok             err=6.99e-07 bad=0/281 wall=27.57s
+[   6.5m] probe     bmm/in-512x128x64/fp32/aT/random       B= 65538 s0 sample -> ok             err=6.99e-07 bad=0/281 wall=27.53s
+[   6.6m] probe     bmm/in-512x128x64/fp32/slice/random    B=  4096 s0 full   -> ok             err=7.37e-07 bad=0/4096 wall=7.26s
+[   6.7m] probe     bmm/in-512x128x64/fp32/slice/random    B=  7168 s0 sample -> ok             err=7e-07 bad=0/266 wall=5.41s
+[   6.8m] probe     bmm/in-512x128x64/fp32/slice/random    B= 10240 s0 sample -> ok             err=7.21e-07 bad=0/266 wall=6.58s
+[   6.9m] probe     bmm/in-512x128x64/fp32/slice/random    B= 13312 s0 sample -> ok             err=7.62e-07 bad=0/266 wall=7.32s
+[   7.1m] probe     bmm/in-512x128x64/fp32/slice/random    B= 16382 s0 sample -> ok             err=6.87e-07 bad=0/266 wall=8.27s
+[   7.2m] probe     bmm/in-512x128x64/fp32/slice/random    B= 16383 s0 sample -> ok             err=6.87e-07 bad=0/266 wall=8.62s
+[   7.3m] probe     bmm/in-512x128x64/fp32/slice/random    B= 16384 s0 sample -> ok             err=6.37e-07 bad=0/266 wall=8.28s
+[   7.5m] probe     bmm/in-512x128x64/fp32/slice/random    B= 16385 s0 sample -> ok             err=6.37e-07 bad=0/266 wall=8.34s
+[   7.6m] probe     bmm/in-512x128x64/fp32/slice/random    B= 16386 s0 sample -> ok             err=6.43e-07 bad=0/266 wall=8.54s
+[   7.8m] probe     bmm/in-512x128x64/fp32/slice/random    B= 20480 s0 sample -> ok             err=6.76e-07 bad=0/270 wall=9.76s
+[   8.0m] probe     bmm/in-512x128x64/fp32/slice/random    B= 24576 s0 sample -> ok             err=7.24e-07 bad=0/270 wall=11.01s
+[   8.2m] probe     bmm/in-512x128x64/fp32/slice/random    B= 28672 s0 sample -> ok             err=6.45e-07 bad=0/271 wall=12.28s
+[   8.4m] probe     bmm/in-512x128x64/fp32/slice/random    B= 32766 s0 sample -> ok             err=5.89e-07 bad=0/271 wall=13.58s
+[   8.6m] probe     bmm/in-512x128x64/fp32/slice/random    B= 32767 s0 sample -> ok             err=6.24e-07 bad=0/271 wall=13.73s
+[   8.9m] probe     bmm/in-512x128x64/fp32/slice/random    B= 32768 s0 sample -> ok             err=6.48e-07 bad=0/271 wall=13.55s
+[   9.1m] probe     bmm/in-512x128x64/fp32/slice/random    B= 32769 s0 sample -> ok             err=5.87e-07 bad=0/271 wall=13.71s
+[   9.3m] probe     bmm/in-512x128x64/fp32/slice/random    B= 32770 s0 sample -> ok             err=6.05e-07 bad=0/271 wall=13.57s
+[   9.6m] probe     bmm/in-512x128x64/fp32/slice/random    B= 40960 s0 sample -> ok             err=5.67e-07 bad=0/274 wall=16.23s
+[   9.9m] probe     bmm/in-512x128x64/fp32/slice/random    B= 49152 s0 sample -> ok             err=6.29e-07 bad=0/274 wall=19.19s
+[  10.3m] probe     bmm/in-512x128x64/fp32/slice/random    B= 57344 s0 sample -> ok             err=6.28e-07 bad=0/281 wall=21.58s
+[  10.7m] probe     bmm/in-512x128x64/fp32/slice/random    B= 65534 s0 sample -> ok             err=6.38e-07 bad=0/281 wall=24.23s
+[  11.1m] probe     bmm/in-512x128x64/fp32/slice/random    B= 65535 s0 sample -> ok             err=6.38e-07 bad=0/281 wall=24.13s
+[  11.5m] probe     bmm/in-512x128x64/fp32/slice/random    B= 65536 s0 sample -> ok             err=6.28e-07 bad=0/281 wall=24.16s
+[  11.9m] probe     bmm/in-512x128x64/fp32/slice/random    B= 65537 s0 sample -> ok             err=6.99e-07 bad=0/281 wall=24.46s
+[  12.3m] probe     bmm/in-512x128x64/fp32/slice/random    B= 65538 s0 sample -> ok             err=6.99e-07 bad=0/281 wall=24.19s
+[  13.6m] final     bmm/in-512x128x64/fp32/aT/random       B= 65538 s0 full   -> ok             err=8.28e-07 bad=0/65538 wall=79.19s
+[  14.9m] final     bmm/in-512x128x64/fp32/aT/random       B= 65538 s1 full   -> ok             err=8.21e-07 bad=0/65538 wall=79.39s
+[  16.3m] final     bmm/in-512x128x64/fp32/aT/random       B= 65538 s2 full   -> ok             err=7.88e-07 bad=0/65538 wall=79.74s
+[  17.5m] final     bmm/in-512x128x64/fp32/slice/random    B= 65538 s0 full   -> ok             err=8.28e-07 bad=0/65538 wall=76.05s
+[  18.8m] final     bmm/in-512x128x64/fp32/slice/random    B= 65538 s1 full   -> ok             err=8.21e-07 bad=0/65538 wall=76.5s
+[  20.1m] final     bmm/in-512x128x64/fp32/slice/random    B= 65538 s2 full   -> ok             err=7.88e-07 bad=0/65538 wall=76.82s
+# 新規 56 実行, 20.1 分。W&B の送信完了を待つ
+-> /content/mb/results/summary/a100/20260919T151112-a100.md

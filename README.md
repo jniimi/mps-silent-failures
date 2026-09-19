@@ -42,10 +42,12 @@ It is a `TorchDispatchMode` that checks the inputs and outputs of every aten op.
 | `check_idx_invariance.py` | CPU-only check that the index-encoded runs which the rules predict to be wrong, but which are correct, use inputs that are unchanged by the predicted misreading. |
 | `workload_stats.py` | Recomputes the case-study statistics from the saved logits, without rerunning on MPS (separation of errors around the boundary position, accuracy and exact McNemar test on the affected positions, predicted-class breakdown). |
 | `firstpass/` | First-pass test suite over 26 operations and 11 PyTorch versions (`check_mps.py`, `run_matrix.sh`), the guard, its benchmark, and the minimal reproduction. |
+| `colab_chunks.py` | Runs the sweep on a Colab GPU in chunks of (shape, dtype, layout), one run per chunk, because a Colab session does not last for the whole sweep. |
 | `cuda_ref.py` | CUDA control runs on an A100 for the first-pass configurations (output in `results/cuda/a100_run1.log`). |
 | `results/summary/` | Per-run summaries and the version table. |
 | `results/raw/` | One JSON line per executed configuration, and a manifest per run (environment, versions, script hashes, tolerances). |
 | `results/workload/` | Outputs of the case study (logits, first-layer intermediates, figure, abort log at L = 256). |
+| `results/summary/a100/`, `results/raw/a100/` | CUDA control: the same sweep on an A100 80 GB with PyTorch 2.14.0 (18 chunks, 1464 runs, all correct; overview in `cuda_control.md`). These runs finished after the first version of the report and are not described in it. |
 | `results/cuda/` | CUDA control output and a note on `torch.arange` on CUDA. |
 | `provenance/` | Earlier revisions of `scan.py` whose hashes appear in the manifests. |
 
