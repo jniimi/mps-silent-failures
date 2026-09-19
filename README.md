@@ -37,6 +37,7 @@ It is a `TorchDispatchMode` that checks the inputs and outputs of every aten op.
 | `run_versions.sh`, `versions.py` | Reduced sweep for each PyTorch version, and the version-by-condition table. |
 | `demo_workload.py` | Case study on a real workload: a RoBERTa sentiment classifier with eager attention on TweetEval, one large batch against chunked execution. |
 | `boundary_map.py` | Draws the boundary map figure of the report from the raw results of one run. |
+| `check_idx_invariance.py` | CPU-only check that the index-encoded runs which the rules predict to be wrong, but which are correct, use inputs that are unchanged by the predicted misreading. |
 | `workload_stats.py` | Recomputes the case-study statistics from the saved logits, without rerunning on MPS (separation of errors around the boundary position, accuracy and exact McNemar test on the affected positions, predicted-class breakdown). |
 | `firstpass/` | First-pass test suite over 26 operations and 11 PyTorch versions (`check_mps.py`, `run_matrix.sh`), the guard, its benchmark, and the minimal reproduction. |
 | `cuda_ref.py` | CUDA control runs on an A100 for the first-pass configurations (output in `results/cuda/a100_run1.log`). |
