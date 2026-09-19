@@ -139,7 +139,7 @@ def main():
                     if a[B]["cls"] != b[B]["cls"]:
                         e = a[B].get("error") or a[B].get("stderr_tail") or ""
                         diffs.append(f"| {v} | {k[0]} | {k[1]} | {k[2]} | {B} | {b[B]['cls']} | {a[B]['cls']} | "
-                                     f"{best_hyp(a[B]) or e[:120]} |")
+                                     f"{best_hyp(a[B]) or e[-120:]} |")
     L += ["## 2.14.0 と分類が違う点(同じ B で比較)", ""]
     if diffs:
         L += ["| torch | shape | dtype | レイアウト | B | 2.14.0 | この版 | 仮説 / エラー |", "|---|---|---|---|---|---|---|---|"] + diffs
@@ -179,13 +179,13 @@ def main():
                      f"{me:.2g} | {r.get('frac_elem_bad', 0):.2g} | {brs} | {best_hyp(r)} | {top} |"
                      if isinstance(me, float) else
                      f"| {v} | {r['shape_id']} | {r['dtype']} | {r['layout']} | {r['B']} | {r['kind']} | {short(r['cls'])} | - | - | - | - | "
-                     f"{(r.get('error') or r.get('stderr_tail') or '')[:100]} |")
+                     f"{(r.get('error') or r.get('stderr_tail') or '')[-120:]} |")
     L += ["", "(異常だった最終点だけを載せる)", ""]
 
     # エラー・クラッシュ
     L += ["## エラー・クラッシュ(版ごと)", ""]
     for v, (m, rows) in data.items():
-        c = Counter((r["cls"], (r.get("error") or r.get("stderr_tail") or "")[:160]) for r in rows
+        c = Counter((r["cls"], (r.get("error") or r.get("stderr_tail") or "")[-200:]) for r in rows
                     if r["cls"] in ("error", "crash", "timeout", "input_corrupt", "truncated"))
         if c:
             L.append(f"- **{v}**: " + "; ".join(f"{cl} ×{n} `{msg}`" for (cl, msg), n in c.most_common()))

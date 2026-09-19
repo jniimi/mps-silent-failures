@@ -1,0 +1,122 @@
+{
+ "run_id": "20260919T194139-studio",
+ "host_tag": "studio",
+ "status": "done",
+ "updated": "2026-09-19T20:10:33",
+ "env": {
+  "os": "Darwin",
+  "os_release": "27.0.0",
+  "arch": "arm64",
+  "macos": "27.0",
+  "macos_build": "26A428",
+  "linux_distro": "",
+  "hw_model": "Mac14,14",
+  "chip": "Apple M2 Ultra",
+  "mem_bytes": 206158430208
+ },
+ "code": {
+  "sha_scan": "7de38f9df9a3ef316921c2362066d87cdbb54a61e577df5dbaf1584facbf6833",
+  "sha_worker": "5b2140fcc7704184dc44b75e5aee3935d6c6d5828a2adf968334891d82868f7f",
+  "git_rev": "16cacc9277701be8c7b23d75701907c10eac7003",
+  "git_rev_source": "git",
+  "git_dirty_repo": true,
+  "git_dirty_code": false
+ },
+ "worker": {
+  "python": "3.12.12",
+  "torch": "2.12.1",
+  "executable": "/Users/USER/.cache/uv/builds-v0/.tmpDrkFnl/bin/python",
+  "cuda": null
+ },
+ "device": "mps",
+ "torch_req": "2.12.1",
+ "python_req": "3.12",
+ "worker_cmd": "uv run -q --no-project --python 3.12 --with torch==2.12.1 --with numpy python /Users/USER/Documents/GitHub/mps-boundary/worker.py --device mps '<spec>'",
+ "mem_limit_host_bytes": 123695058124,
+ "mem_limit_dev_bytes": null,
+ "mem_limit_note": "",
+ "invocations": [
+  {
+   "started": "2026-09-19T19:41:40",
+   "argv": [
+    "scan.py",
+    "--host-tag",
+    "studio",
+    "--torch",
+    "2.12.1",
+    "--python",
+    "3.12",
+    "--shapes",
+    "out-256x64x256,in-256x256x64",
+    "--dtypes",
+    "fp32,fp16",
+    "--layouts",
+    "contig,bT,aT,slice",
+    "--grid-base",
+    "2",
+    "--idx-kinds",
+    "",
+    "--final-idx-kinds",
+    "idx_a_rc,idx_b_rc",
+    "--final-idx-where",
+    "abnormal",
+    "--final-seeds",
+    "0",
+    "--budget-hours",
+    "1.0"
+   ],
+   "code": {
+    "sha_scan": "7de38f9df9a3ef316921c2362066d87cdbb54a61e577df5dbaf1584facbf6833",
+    "sha_worker": "5b2140fcc7704184dc44b75e5aee3935d6c6d5828a2adf968334891d82868f7f",
+    "git_rev": "16cacc9277701be8c7b23d75701907c10eac7003",
+    "git_rev_source": "git",
+    "git_dirty_repo": true,
+    "git_dirty_code": false
+   }
+  },
+  {
+   "started": "2026-09-19T19:42:03",
+   "argv": [
+    "scan.py",
+    "--host-tag",
+    "studio",
+    "--torch",
+    "2.12.1",
+    "--python",
+    "3.12",
+    "--shapes",
+    "out-256x64x256,in-256x256x64",
+    "--dtypes",
+    "fp32,fp16",
+    "--layouts",
+    "contig,bT,aT,slice",
+    "--grid-base",
+    "2",
+    "--idx-kinds",
+    "",
+    "--final-idx-kinds",
+    "idx_a_rc,idx_b_rc",
+    "--final-idx-where",
+    "abnormal",
+    "--final-seeds",
+    "0",
+    "--budget-hours",
+    "1.0"
+   ],
+   "code": {
+    "sha_scan": "7de38f9df9a3ef316921c2362066d87cdbb54a61e577df5dbaf1584facbf6833",
+    "sha_worker": "5b2140fcc7704184dc44b75e5aee3935d6c6d5828a2adf968334891d82868f7f",
+    "git_rev": "16cacc9277701be8c7b23d75701907c10eac7003",
+    "git_rev_source": "git",
+    "git_dirty_repo": true,
+    "git_dirty_code": false
+   }
+  }
+ ],
+ "tol": {
+  "fp32": 1.2261421649489541e-05,
+  "fp16": 0.004211458134780279
+ },
+ "elapsed_min": 28.9,
+ "n_rows_new": 360
+}
