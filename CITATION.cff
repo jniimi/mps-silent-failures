@@ -8,6 +8,7 @@ authors:
     orcid: "https://orcid.org/0000-0002-4618-6272"
     affiliation: "Meijo University"
 repository-code: "https://github.com/jniimi/mps-silent-failures"
+doi: "10.5281/zenodo.22845374"
 license: MIT
 version: "1.0.0"
 date-released: "2026-09-19"

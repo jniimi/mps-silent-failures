@@ -1,5 +1,7 @@
 # mps-silent-failures
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22845374.svg)](https://doi.org/10.5281/zenodo.22845374)
+
 Code and results for the technical report
 
 > Junichiro Niimi. *Silent Failures at the $2^{32}$ Boundary: A Technical Report on Large-Tensor Matrix Multiplication in PyTorch's Apple MPS Backend.* 2026. [PDF](paper.pdf) (arXiv link: to be added)
@@ -73,6 +75,8 @@ Mac Studio (Mac14,14), Apple M2 Ultra, 192 GB unified memory, macOS 27.0 (build 
 - **Status.** This is the state of the first version of the report: one machine and one macOS version. Other macOS versions are planned for the next version.
 
 ## Citation
+
+Please cite the report. To refer to the code and the results themselves, use the Zenodo record, [doi:10.5281/zenodo.22845374](https://doi.org/10.5281/zenodo.22845374), which always resolves to the latest version.
 
 ```bibtex
 @misc{niimi2026mps,
