@@ -1,12 +1,14 @@
-"""MPS で 2**32 要素を超えるテンソルを扱う演算を検出して止める。
+"""MPS で 2**32 要素以上のテンソルを扱う演算を検出して止める。
 
     import mps_guard
-    mps_guard.install()          # 以後、MPS 上の演算の入力か出力が 2**32 要素を超えたら RuntimeError
+    mps_guard.install()          # 以後、MPS 上の演算の入力か出力が 2**32 要素以上なら RuntimeError
 
 macOS 15 以上 + torch 2.5 以上の MPS では、2**32 要素を超えるテンソルを扱う演算の一部が
 エラーを出さずに誤った値を返す(pytorch#197636 ほか。一覧は README)。
 どの演算が壊れるかは torch の版によって変わり、全部を個別に回避するのは現実的でないため、
-「MPS 上で 2**32 要素を超えるテンソルを作らない」を規則にし、破ったら止める。
+「MPS 上で 2**32 要素以上のテンソルを作らない」を規則にし、破ったら止める。
+判定は「以上」: torch 2.4.1 では、ちょうど 2**32 要素の view を入力にした bmm がエラーなしに誤答する
+(走査 20260919T152130-studio)。2**32 未満で無言の誤答になった実行は、走査したどの版にも無い。
 呼び出し側はバッチをチャンクに分けて対応する。
 
 TorchDispatchMode で全 aten 演算を見るので、Python 側のオーバーヘッドが乗る。
@@ -31,9 +33,9 @@ class Over2Pow32Error(RuntimeError):
 
 def _check(tensors, op, where):
     for t in tensors:
-        if isinstance(t, torch.Tensor) and t.device.type == "mps" and t.numel() > LIMIT:
+        if isinstance(t, torch.Tensor) and t.device.type == "mps" and t.numel() >= LIMIT:
             raise Over2Pow32Error(
-                f"{op}: {where} tensor of shape {tuple(t.shape)} has {t.numel():,} elements (> 2**32) on MPS. "
+                f"{op}: {where} tensor of shape {tuple(t.shape)} has {t.numel():,} elements (>= 2**32) on MPS. "
                 "Results of such ops can be silently wrong on macOS 15+; split the batch into chunks."
             )
 
@@ -55,6 +57,15 @@ if hasattr(_aten, "_scaled_dot_product_attention_math_for_mps"):
     )
 
 
+def _chunk_hint(func, args) -> str:
+    """bmm / baddbmm はバッチ間が独立なので、各チャンクの入出力が 2**32 要素未満になる最大のバッチ数を示す。"""
+    if func not in (_aten.bmm.default, _aten.baddbmm.default):
+        return ""
+    a, b = args[-2:] if func is _aten.bmm.default else args[1:3]
+    per = max(a.shape[1] * a.shape[2], b.shape[1] * b.shape[2], a.shape[1] * b.shape[2])
+    return f" For this bmm, at most {(LIMIT - 1) // per:,} batches per chunk keep every operand and the output below 2**32 elements."
+
+
 class MPSSizeGuard(TorchDispatchMode):
     def __torch_dispatch__(self, func, types, args=(), kwargs=None):
         kwargs = kwargs or {}
@@ -63,10 +74,10 @@ class MPSSizeGuard(TorchDispatchMode):
         est = _PRE.get(func)
         if est is not None and args[0].device.type == "mps":
             n = est(*args)
-            if n > LIMIT:
+            if n >= LIMIT:
                 raise Over2Pow32Error(
-                    f"{func}: would need a tensor with {n:,} elements (> 2**32) on MPS. "
-                    "Results of such ops can be silently wrong on macOS 15+; split the batch into chunks."
+                    f"{func}: would need a tensor with {n:,} elements (>= 2**32) on MPS. "
+                    "Results of such ops can be silently wrong on macOS 15+; split the batch into chunks." + _chunk_hint(func, args)
                 )
         out = func(*args, **kwargs)
         flat_out, _ = tree_flatten(out)
