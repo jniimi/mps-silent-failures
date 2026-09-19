@@ -2,11 +2,11 @@
 
 Code and results for the technical report
 
-> Junichiro Niimi. *Silent Failures at the $2^{32}$ Boundary: A Technical Report on Large-Tensor Matrix Multiplication in PyTorch's Apple MPS Backend.* 2026. (arXiv link: to be added)
+> Junichiro Niimi. *Silent Failures at the $2^{32}$ Boundary: A Technical Report on Large-Tensor Matrix Multiplication in PyTorch's Apple MPS Backend.* 2026. [PDF](paper.pdf) (arXiv link: to be added)
 
 On macOS 15 and later, PyTorch's MPS backend returns **wrong values without an error or a warning** for batched matrix multiplication on tensors with more than 2**32 elements. This affects `torch.bmm`, and therefore `torch.matmul` and eager attention. We observed it in every PyTorch release we tested, from 2.4.1 to 2.14.0. Upstream issue: [pytorch/pytorch#197636](https://github.com/pytorch/pytorch/issues/197636).
 
-The study is black-box. This repository records what the backend returns compared with reference results; it does not analyse the implementation.
+The study is black-box. This repository records what the backend returns compared with reference results; it does not analyze the implementation.
 
 ## Minimal reproduction
 
@@ -27,7 +27,7 @@ import mps_guard
 mps_guard.install()   # from here on, any MPS op touching >= 2**32 elements raises Over2Pow32Error
 ```
 
-It is a `TorchDispatchMode` that checks the inputs and outputs of every aten op. For `mm`, `bmm`, `addmm`, `baddbmm` and fused SDPA it estimates the size before running the op, because some PyTorch versions crash inside the op. The threshold is inclusive because PyTorch 2.4.1 is silently wrong for a view with exactly 2**32 elements; below 2**32 elements, no run of the sweep in any version is silently wrong. For `bmm` the error message states how many batches per chunk stay below the limit. Overhead measured with `firstpass/bench_guard.py`: 1.73x on a small training loop (2000 steps, 1024 x 120 inputs) and 1.00x on large attention forwards. Set `MPS_GUARD=0` to disable `install()`.
+It is a `TorchDispatchMode` that checks the inputs and outputs of every aten op. For `mm`, `bmm`, `addmm`, `baddbmm` and fused SDPA it estimates the size before running the op, because some PyTorch versions crash inside the op. The threshold is inclusive because PyTorch 2.4.1 is silently wrong for a view with exactly 2**32 elements; below 2**32 elements, no run of the sweep in any version is silently wrong. For `bmm` the error message states how many batches per chunk stay below the limit. Overhead measured with `firstpass/bench_guard.py`: 1.73x on a small training loop (2000 steps, 1024 x 120 inputs) and 1.00x on large attention forward passes. Set `MPS_GUARD=0` to disable `install()`.
 
 ## Contents
 
