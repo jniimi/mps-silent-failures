@@ -1,0 +1,119 @@
+Downloading pydantic-core (2.0MiB)
+Downloading numpy (15.9MiB)
+Downloading wandb (24.9MiB)
+ Downloaded pydantic-core
+ Downloaded numpy
+ Downloaded wandb
+Installed 25 packages in 22ms
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /root/.netrc.
+# run_id=20260921T072616-a100 {'os': 'Linux', 'os_release': '6.6.122+', 'arch': 'x86_64', 'macos': '', 'macos_build': '', 'linux_distro': 'Ubuntu 24.04.1 LTS', 'hw_model': 'Google Compute Engine', 'chip': 'Intel(R) Xeon(R) CPU @ 2.20GHz', 'mem_bytes': 179370467328, 'n_cpu': 12, 'gpu_name': 'NVIDIA A100-SXM4-80GB', 'gpu_mem_bytes': 85899345920, 'gpu_driver': '580.82.07', 'gpu_mem_source': 'nvidia-smi'} worker={'python': '3.12.3', 'torch': '2.14.0+cu130', 'executable': '/root/.cache/uv/builds-v0/.tmpE2ZUjw/bin/python', 'cuda': '13.0', 'gpu_name': 'NVIDIA A100-SXM4-80GB', 'gpu_mem_bytes': 85094825984} code=8a89a4a limit=host 100GiB / GPU 72GiB  wandb=(private)
+[   0.2m] calibrate bmm/in-256x256x64/fp16/contig/random   B=  4096 s0 full   -> ok             err=0.000421 bad=0/4096 wall=7.06s
+[   0.3m] calibrate bmm/in-256x256x64/fp16/contig/random   B=  4096 s1 full   -> ok             err=0.000414 bad=0/4096 wall=6.46s
+[   0.4m] calibrate bmm/in-256x256x64/fp16/contig/random   B=  4096 s2 full   -> ok             err=0.00042 bad=0/4096 wall=6.97s
+# tol = {'fp16': 0.004211458134780279}
+[   0.5m] probe     bmm/in-256x256x64/fp16/contig/random   B=  4096 s0 full   -> ok             err=0.000421 bad=0/4096 wall=6.45s
+[   0.6m] probe     bmm/in-256x256x64/fp16/contig/random   B=  7680 s0 sample -> ok             err=0.000404 bad=0/266 wall=6.12s
+[   0.7m] probe     bmm/in-256x256x64/fp16/contig/random   B= 11264 s0 sample -> ok             err=0.000404 bad=0/266 wall=6.92s
+[   0.9m] probe     bmm/in-256x256x64/fp16/contig/random   B= 14848 s0 sample -> ok             err=0.000406 bad=0/266 wall=8.45s
+[   1.0m] probe     bmm/in-256x256x64/fp16/contig/random   B= 18432 s0 sample -> ok             err=0.000403 bad=0/266 wall=9.46s
+[   1.2m] probe     bmm/in-256x256x64/fp16/contig/random   B= 22016 s0 sample -> ok             err=0.000404 bad=0/266 wall=10.26s
+[   1.4m] probe     bmm/in-256x256x64/fp16/contig/random   B= 25600 s0 sample -> ok             err=0.000402 bad=0/266 wall=11.55s
+[   1.6m] probe     bmm/in-256x256x64/fp16/contig/random   B= 29184 s0 sample -> ok             err=0.0004 bad=0/266 wall=12.79s
+[   1.8m] probe     bmm/in-256x256x64/fp16/contig/random   B= 32766 s0 sample -> ok             err=0.000404 bad=0/266 wall=14.22s
+[   2.1m] probe     bmm/in-256x256x64/fp16/contig/random   B= 32767 s0 sample -> ok             err=0.000404 bad=0/266 wall=14.02s
+[   2.3m] probe     bmm/in-256x256x64/fp16/contig/random   B= 32768 s0 sample -> ok             err=0.000404 bad=0/266 wall=14.06s
+[   2.5m] probe     bmm/in-256x256x64/fp16/contig/random   B= 32769 s0 sample -> ok             err=0.000403 bad=0/266 wall=14.23s
+[   2.8m] probe     bmm/in-256x256x64/fp16/contig/random   B= 32770 s0 sample -> ok             err=0.000409 bad=0/266 wall=14.1s
+[   3.0m] probe     bmm/in-256x256x64/fp16/contig/random   B= 36864 s0 sample -> ok             err=0.000403 bad=0/271 wall=15.63s
+[   3.3m] probe     bmm/in-256x256x64/fp16/contig/random   B= 40960 s0 sample -> ok             err=0.000408 bad=0/270 wall=16.9s
+[   3.6m] probe     bmm/in-256x256x64/fp16/contig/random   B= 45056 s0 sample -> ok             err=0.000402 bad=0/271 wall=18.42s
+[   4.0m] probe     bmm/in-256x256x64/fp16/contig/random   B= 49152 s0 sample -> ok             err=0.000407 bad=0/270 wall=19.58s
+[   4.3m] probe     bmm/in-256x256x64/fp16/contig/random   B= 53248 s0 sample -> ok             err=0.000396 bad=0/271 wall=20.97s
+[   4.7m] probe     bmm/in-256x256x64/fp16/contig/random   B= 57344 s0 sample -> ok             err=0.0004 bad=0/271 wall=22.56s
+[   5.1m] probe     bmm/in-256x256x64/fp16/contig/random   B= 61440 s0 sample -> ok             err=0.000414 bad=0/270 wall=23.75s
+[   5.5m] probe     bmm/in-256x256x64/fp16/contig/random   B= 65534 s0 sample -> ok             err=0.000403 bad=0/271 wall=25.06s
+[   5.9m] probe     bmm/in-256x256x64/fp16/contig/random   B= 65535 s0 sample -> ok             err=0.000403 bad=0/271 wall=24.95s
+[   6.3m] probe     bmm/in-256x256x64/fp16/contig/random   B= 65536 s0 sample -> ok             err=0.000407 bad=0/271 wall=24.74s
+[   6.7m] probe     bmm/in-256x256x64/fp16/contig/random   B= 65537 s0 sample -> ok             err=0.000403 bad=0/271 wall=24.71s
+[   7.2m] probe     bmm/in-256x256x64/fp16/contig/random   B= 65538 s0 sample -> ok             err=0.000409 bad=0/271 wall=24.94s
+[   7.3m] probe     bmm/in-256x256x64/fp16/bT/random       B=  4096 s0 full   -> ok             err=0.000421 bad=0/4096 wall=6.76s
+[   7.4m] probe     bmm/in-256x256x64/fp16/bT/random       B=  7680 s0 sample -> ok             err=0.000404 bad=0/266 wall=5.85s
+[   7.5m] probe     bmm/in-256x256x64/fp16/bT/random       B= 11264 s0 sample -> ok             err=0.000404 bad=0/266 wall=7.22s
+[   7.6m] probe     bmm/in-256x256x64/fp16/bT/random       B= 14848 s0 sample -> ok             err=0.000406 bad=0/266 wall=8.48s
+[   7.8m] probe     bmm/in-256x256x64/fp16/bT/random       B= 18432 s0 sample -> ok             err=0.000403 bad=0/266 wall=9.31s
+[   8.0m] probe     bmm/in-256x256x64/fp16/bT/random       B= 22016 s0 sample -> ok             err=0.000404 bad=0/266 wall=10.75s
+[   8.2m] probe     bmm/in-256x256x64/fp16/bT/random       B= 25600 s0 sample -> ok             err=0.000402 bad=0/266 wall=12.07s
+[   8.4m] probe     bmm/in-256x256x64/fp16/bT/random       B= 29184 s0 sample -> ok             err=0.0004 bad=0/266 wall=13.33s
+[   8.6m] probe     bmm/in-256x256x64/fp16/bT/random       B= 32766 s0 sample -> ok             err=0.000404 bad=0/266 wall=14.57s
+[   8.9m] probe     bmm/in-256x256x64/fp16/bT/random       B= 32767 s0 sample -> ok             err=0.000404 bad=0/266 wall=14.42s
+[   9.1m] probe     bmm/in-256x256x64/fp16/bT/random       B= 32768 s0 sample -> ok             err=0.000404 bad=0/266 wall=14.27s
+[   9.3m] probe     bmm/in-256x256x64/fp16/bT/random       B= 32769 s0 sample -> ok             err=0.000403 bad=0/266 wall=14.46s
+[   9.6m] probe     bmm/in-256x256x64/fp16/bT/random       B= 32770 s0 sample -> ok             err=0.000409 bad=0/266 wall=14.37s
+[   9.8m] probe     bmm/in-256x256x64/fp16/bT/random       B= 36864 s0 sample -> ok             err=0.000403 bad=0/271 wall=15.89s
+[  10.1m] probe     bmm/in-256x256x64/fp16/bT/random       B= 40960 s0 sample -> ok             err=0.000408 bad=0/270 wall=17.34s
+[  10.4m] probe     bmm/in-256x256x64/fp16/bT/random       B= 45056 s0 sample -> ok             err=0.000402 bad=0/271 wall=18.74s
+[  10.8m] probe     bmm/in-256x256x64/fp16/bT/random       B= 49152 s0 sample -> ok             err=0.000407 bad=0/270 wall=19.97s
+[  11.1m] probe     bmm/in-256x256x64/fp16/bT/random       B= 53248 s0 sample -> ok             err=0.000396 bad=0/271 wall=21.52s
+[  11.5m] probe     bmm/in-256x256x64/fp16/bT/random       B= 57344 s0 sample -> ok             err=0.0004 bad=0/271 wall=23.05s
+[  11.9m] probe     bmm/in-256x256x64/fp16/bT/random       B= 61440 s0 sample -> ok             err=0.000414 bad=0/270 wall=24.34s
+[  12.4m] probe     bmm/in-256x256x64/fp16/bT/random       B= 65534 s0 sample -> ok             err=0.000403 bad=0/271 wall=25.89s
+[  12.8m] probe     bmm/in-256x256x64/fp16/bT/random       B= 65535 s0 sample -> ok             err=0.000403 bad=0/271 wall=25.72s
+[  13.2m] probe     bmm/in-256x256x64/fp16/bT/random       B= 65536 s0 sample -> ok             err=0.000407 bad=0/271 wall=25.76s
+[  13.7m] probe     bmm/in-256x256x64/fp16/bT/random       B= 65537 s0 sample -> ok             err=0.000403 bad=0/271 wall=25.67s
+[  14.1m] probe     bmm/in-256x256x64/fp16/bT/random       B= 65538 s0 sample -> ok             err=0.000409 bad=0/271 wall=25.84s
+[  14.1m] idx_probe bmm/in-256x256x64/fp16/contig/idx_a_batch B=  4096 s0 sample -> ok             err=0 bad=0/266 wall=2.79s
+[  14.2m] idx_probe bmm/in-256x256x64/fp16/contig/idx_a_batch B= 32767 s0 sample -> ok             err=0 bad=0/266 wall=4.65s
+[  14.3m] idx_probe bmm/in-256x256x64/fp16/contig/idx_a_batch B= 32769 s0 sample -> ok             err=0 bad=0/266 wall=4.59s
+[  14.4m] idx_probe bmm/in-256x256x64/fp16/contig/idx_a_batch B= 65535 s0 sample -> ok             err=0 bad=0/271 wall=6.47s
+[  14.5m] idx_probe bmm/in-256x256x64/fp16/contig/idx_a_batch B= 65537 s0 sample -> ok             err=0 bad=0/271 wall=6.6s
+[  14.6m] idx_probe bmm/in-256x256x64/fp16/bT/idx_a_batch  B=  4096 s0 sample -> ok             err=0 bad=0/266 wall=2.8s
+[  14.6m] idx_probe bmm/in-256x256x64/fp16/bT/idx_a_batch  B= 32767 s0 sample -> ok             err=0 bad=0/266 wall=4.82s
+[  14.7m] idx_probe bmm/in-256x256x64/fp16/bT/idx_a_batch  B= 32769 s0 sample -> ok             err=0 bad=0/266 wall=4.88s
+[  14.8m] idx_probe bmm/in-256x256x64/fp16/bT/idx_a_batch  B= 65535 s0 sample -> ok             err=0 bad=0/271 wall=6.8s
+[  14.9m] idx_probe bmm/in-256x256x64/fp16/bT/idx_a_batch  B= 65537 s0 sample -> ok             err=0 bad=0/271 wall=6.95s
+[  15.0m] idx_probe bmm/in-256x256x64/fp16/contig/idx_a_rc B=  4096 s0 sample -> ok             err=0 bad=0/266 wall=3.08s
+[  15.1m] idx_probe bmm/in-256x256x64/fp16/contig/idx_a_rc B= 32767 s0 sample -> ok             err=0 bad=0/266 wall=4.99s
+[  15.2m] idx_probe bmm/in-256x256x64/fp16/contig/idx_a_rc B= 32769 s0 sample -> ok             err=0 bad=0/266 wall=4.85s
+[  15.3m] idx_probe bmm/in-256x256x64/fp16/contig/idx_a_rc B= 65535 s0 sample -> ok             err=0 bad=0/271 wall=6.73s
+[  15.4m] idx_probe bmm/in-256x256x64/fp16/contig/idx_a_rc B= 65537 s0 sample -> ok             err=0 bad=0/271 wall=6.9s
+[  15.4m] idx_probe bmm/in-256x256x64/fp16/bT/idx_a_rc     B=  4096 s0 sample -> ok             err=0 bad=0/266 wall=3.16s
+[  15.5m] idx_probe bmm/in-256x256x64/fp16/bT/idx_a_rc     B= 32767 s0 sample -> ok             err=0 bad=0/266 wall=5.31s
+[  15.6m] idx_probe bmm/in-256x256x64/fp16/bT/idx_a_rc     B= 32769 s0 sample -> ok             err=0 bad=0/266 wall=5.04s
+[  15.7m] idx_probe bmm/in-256x256x64/fp16/bT/idx_a_rc     B= 65535 s0 sample -> ok             err=0 bad=0/271 wall=7.61s
+[  15.9m] idx_probe bmm/in-256x256x64/fp16/bT/idx_a_rc     B= 65537 s0 sample -> ok             err=0 bad=0/271 wall=7.23s
+[  15.9m] idx_probe bmm/in-256x256x64/fp16/contig/idx_b_batch B=  4096 s0 sample -> ok             err=0 bad=0/266 wall=2.87s
+[  16.0m] idx_probe bmm/in-256x256x64/fp16/contig/idx_b_batch B= 32767 s0 sample -> ok             err=0 bad=0/266 wall=4.59s
+[  16.1m] idx_probe bmm/in-256x256x64/fp16/contig/idx_b_batch B= 32769 s0 sample -> ok             err=0 bad=0/266 wall=4.65s
+[  16.2m] idx_probe bmm/in-256x256x64/fp16/contig/idx_b_batch B= 65535 s0 sample -> ok             err=0 bad=0/271 wall=6.79s
+[  16.3m] idx_probe bmm/in-256x256x64/fp16/contig/idx_b_batch B= 65537 s0 sample -> ok             err=0 bad=0/271 wall=6.73s
+[  16.3m] idx_probe bmm/in-256x256x64/fp16/bT/idx_b_batch  B=  4096 s0 sample -> ok             err=0 bad=0/266 wall=2.92s
+[  16.4m] idx_probe bmm/in-256x256x64/fp16/bT/idx_b_batch  B= 32767 s0 sample -> ok             err=0 bad=0/266 wall=4.74s
+[  16.5m] idx_probe bmm/in-256x256x64/fp16/bT/idx_b_batch  B= 32769 s0 sample -> ok             err=0 bad=0/266 wall=4.74s
+[  16.6m] idx_probe bmm/in-256x256x64/fp16/bT/idx_b_batch  B= 65535 s0 sample -> ok             err=0 bad=0/271 wall=7.16s
+[  16.7m] idx_probe bmm/in-256x256x64/fp16/bT/idx_b_batch  B= 65537 s0 sample -> ok             err=0 bad=0/271 wall=6.84s
+[  16.8m] idx_probe bmm/in-256x256x64/fp16/contig/idx_b_rc B=  4096 s0 sample -> ok             err=0 bad=0/266 wall=3.05s
+[  16.9m] idx_probe bmm/in-256x256x64/fp16/contig/idx_b_rc B= 32767 s0 sample -> ok             err=0 bad=0/266 wall=4.64s
+[  16.9m] idx_probe bmm/in-256x256x64/fp16/contig/idx_b_rc B= 32769 s0 sample -> ok             err=0 bad=0/266 wall=4.62s
+[  17.0m] idx_probe bmm/in-256x256x64/fp16/contig/idx_b_rc B= 65535 s0 sample -> ok             err=0 bad=0/271 wall=6.73s
+[  17.2m] idx_probe bmm/in-256x256x64/fp16/contig/idx_b_rc B= 65537 s0 sample -> ok             err=0 bad=0/271 wall=6.62s
+[  17.2m] idx_probe bmm/in-256x256x64/fp16/bT/idx_b_rc     B=  4096 s0 sample -> ok             err=0 bad=0/266 wall=3.06s
+[  17.3m] idx_probe bmm/in-256x256x64/fp16/bT/idx_b_rc     B= 32767 s0 sample -> ok             err=0 bad=0/266 wall=4.93s
+[  17.4m] idx_probe bmm/in-256x256x64/fp16/bT/idx_b_rc     B= 32769 s0 sample -> ok             err=0 bad=0/266 wall=4.94s
+[  17.5m] idx_probe bmm/in-256x256x64/fp16/bT/idx_b_rc     B= 65535 s0 sample -> ok             err=0 bad=0/271 wall=7.21s
+[  17.6m] idx_probe bmm/in-256x256x64/fp16/bT/idx_b_rc     B= 65537 s0 sample -> ok             err=0 bad=0/271 wall=7.23s
+[  18.7m] final     bmm/in-256x256x64/fp16/contig/random   B= 65538 s0 full   -> ok             err=0.00043 bad=0/65538 wall=64.65s
+[  19.8m] final     bmm/in-256x256x64/fp16/contig/random   B= 65538 s1 full   -> ok             err=0.000428 bad=0/65538 wall=64.49s
+[  20.8m] final     bmm/in-256x256x64/fp16/contig/random   B= 65538 s2 full   -> ok             err=0.00044 bad=0/65538 wall=64.56s
+[  21.3m] final     bmm/in-256x256x64/fp16/contig/idx_a_batch B= 65538 s0 full   -> ok             err=0 bad=0/65538 wall=27.67s
+[  21.8m] final     bmm/in-256x256x64/fp16/contig/idx_a_rc B= 65538 s0 full   -> ok             err=0 bad=0/65538 wall=28.09s
+[  22.2m] final     bmm/in-256x256x64/fp16/contig/idx_b_batch B= 65538 s0 full   -> ok             err=0 bad=0/65538 wall=27.55s
+[  22.7m] final     bmm/in-256x256x64/fp16/contig/idx_b_rc B= 65538 s0 full   -> ok             err=0 bad=0/65538 wall=27.57s
+[  23.8m] final     bmm/in-256x256x64/fp16/bT/random       B= 65538 s0 full   -> ok             err=0.00043 bad=0/65538 wall=65.12s
+[  24.9m] final     bmm/in-256x256x64/fp16/bT/random       B= 65538 s1 full   -> ok             err=0.000428 bad=0/65538 wall=65.5s
+[  26.0m] final     bmm/in-256x256x64/fp16/bT/random       B= 65538 s2 full   -> ok             err=0.00044 bad=0/65538 wall=65.21s
+[  26.4m] final     bmm/in-256x256x64/fp16/bT/idx_a_batch  B= 65538 s0 full   -> ok             err=0 bad=0/65538 wall=28.32s
+[  26.9m] final     bmm/in-256x256x64/fp16/bT/idx_a_rc     B= 65538 s0 full   -> ok             err=0 bad=0/65538 wall=28.7s
+[  27.4m] final     bmm/in-256x256x64/fp16/bT/idx_b_batch  B= 65538 s0 full   -> ok             err=0 bad=0/65538 wall=28.11s
+[  27.8m] final     bmm/in-256x256x64/fp16/bT/idx_b_rc     B= 65538 s0 full   -> ok             err=0 bad=0/65538 wall=28.46s
+# 新規 107 実行, 27.8 分。W&B の送信完了を待つ
+-> /content/mb/results/summary/a100/20260921T072616-a100.md

@@ -1,0 +1,52 @@
+# A on v1/results/raw/studio/20260919T130741-studio.jsonl: rows=1076 agree=1066 disagree=10
+  agree by predicted class: {('error', 'exact'): 150, ('ok', 'exact'): 847, ('wrong_all', 'exact'): 18, ('wrong_all', 'sampled'): 16, ('wrong_tail', 'exact'): 21, ('wrong_tail', 'sampled'): 14}
+  DISAGREE ('out-128x64x512', 'fp32', 'slice', 'pred=error', 'obs=ok') n= 5 B= [65537, 65538] kinds= ['random']
+     e.g. ('out-128x64x512', 'fp32', 'slice', 'random', 65537, 0, 'sample', 'probe', 'pred=error', 'obs=ok', 'hyp=None')
+  DISAGREE ('out-512x64x128', 'fp32', 'slice', 'pred=error', 'obs=ok') n= 5 B= [65537, 65538] kinds= ['random']
+     e.g. ('out-512x64x128', 'fp32', 'slice', 'random', 65537, 0, 'sample', 'probe', 'pred=error', 'obs=ok', 'hyp=None')
+# A on v2/results/raw/studio/20260920T113543-studio.jsonl: rows=222 agree=202 disagree=20
+  agree by predicted class: {('error', 'exact'): 78, ('ok', 'exact'): 116, ('wrong_all', 'sampled'): 8}
+  DISAGREE ('all-256x256x256', 'fp16', 'contig', "pred=('wrong_tail'", 'obs=ok') n= 5 B= [65537, 65538] kinds= ['random']
+     e.g. ('all-256x256x256', 'fp16', 'contig', 'random', 65537, 0, 'sample', 'probe', "pred=('wrong_tail', 65536)", 'obs=ok', 'hyp=None')
+  DISAGREE ('all-256x256x256', 'fp16', 'slice', 'pred=error', 'obs=ok') n= 5 B= [65537, 65538] kinds= ['random']
+     e.g. ('all-256x256x256', 'fp16', 'slice', 'random', 65537, 0, 'sample', 'probe', 'pred=error', 'obs=ok', 'hyp=None')
+  DISAGREE ('all-256x256x256', 'fp32', 'contig', "pred=('wrong_tail'", 'obs=ok') n= 5 B= [65537, 65538] kinds= ['random']
+     e.g. ('all-256x256x256', 'fp32', 'contig', 'random', 65537, 0, 'sample', 'probe', "pred=('wrong_tail', 65536)", 'obs=ok', 'hyp=None')
+  DISAGREE ('all-256x256x256', 'fp32', 'slice', 'pred=error', 'obs=ok') n= 5 B= [65537, 65538] kinds= ['random']
+     e.g. ('all-256x256x256', 'fp32', 'slice', 'random', 65537, 0, 'sample', 'probe', 'pred=error', 'obs=ok', 'hyp=None')
+# A on v2/results/raw/studio/20260920T132549-studio.jsonl: rows=48 agree=44 disagree=4
+  agree by predicted class: {('error', 'exact'): 16, ('ok', 'exact'): 8, ('wrong_all', 'exact'): 12, ('wrong_tail', 'exact'): 8}
+  DISAGREE ('out-256x64x256', 'fp16', 'slice', 'pred=error', 'obs=ok') n= 2 B= [131072, 131073] kinds= ['random']
+     e.g. ('out-256x64x256', 'fp16', 'slice', 'random', 131072, 0, 'full', 'point', 'pred=error', 'obs=ok', 'hyp=None')
+  DISAGREE ('out-256x64x256', 'fp32', 'slice', 'pred=error', 'obs=ok') n= 2 B= [131072, 131073] kinds= ['random']
+     e.g. ('out-256x64x256', 'fp32', 'slice', 'random', 131072, 0, 'full', 'point', 'pred=error', 'obs=ok', 'hyp=None')
+# A on v2/results/raw/studio/20260920T135650-studio.jsonl: rows=30 agree=24 disagree=6
+  agree by predicted class: {('wrong_all', 'exact'): 24}
+  DISAGREE ('all-256x256x256', 'fp16', 'contig', "pred=('wrong_tail'", 'obs=ok') n= 3 B= [65537] kinds= ['random']
+     e.g. ('all-256x256x256', 'fp16', 'contig', 'random', 65537, 0, 'full', 'point', "pred=('wrong_tail', 65536)", 'obs=ok', 'hyp=None')
+  DISAGREE ('all-256x256x256', 'fp32', 'contig', "pred=('wrong_tail'", 'obs=ok') n= 3 B= [65537] kinds= ['random']
+     e.g. ('all-256x256x256', 'fp32', 'contig', 'random', 65537, 0, 'full', 'point', "pred=('wrong_tail', 65536)", 'obs=ok', 'hyp=None')
+# B on v1/results/raw/studio/20260919T130741-studio.jsonl: rows=1076 agree=1076 disagree=0
+  agree by predicted class: {('error', 'exact'): 150, ('ok', 'exact'): 857, ('wrong_all', 'exact'): 18, ('wrong_all', 'sampled'): 16, ('wrong_tail', 'exact'): 21, ('wrong_tail', 'sampled'): 14}
+# B on v2/results/raw/studio/20260920T113543-studio.jsonl: rows=222 agree=222 disagree=0
+  agree by predicted class: {('error', 'exact'): 78, ('ok', 'exact'): 136, ('wrong_all', 'sampled'): 8}
+# B on v2/results/raw/studio/20260920T132549-studio.jsonl: rows=48 agree=48 disagree=0
+  agree by predicted class: {('error', 'exact'): 16, ('ok', 'exact'): 12, ('wrong_all', 'exact'): 12, ('wrong_tail', 'exact'): 8}
+# B on v2/results/raw/studio/20260920T135650-studio.jsonl: rows=30 agree=30 disagree=0
+  agree by predicted class: {('ok', 'exact'): 6, ('wrong_all', 'exact'): 24}
+# C on v1/results/raw/studio/20260919T130741-studio.jsonl: rows=1076 agree=1076 disagree=0
+  agree by predicted class: {('error', 'exact'): 150, ('ok', 'exact'): 857, ('wrong_all', 'exact'): 18, ('wrong_all', 'sampled'): 16, ('wrong_tail', 'exact'): 21, ('wrong_tail', 'sampled'): 14}
+# C on v2/results/raw/studio/20260920T113543-studio.jsonl: rows=222 agree=212 disagree=10
+  agree by predicted class: {('error', 'exact'): 78, ('ok', 'exact'): 126, ('wrong_all', 'sampled'): 8}
+  DISAGREE ('all-256x256x256', 'fp16', 'contig', "pred=('wrong_tail'", 'obs=ok') n= 5 B= [65537, 65538] kinds= ['random']
+     e.g. ('all-256x256x256', 'fp16', 'contig', 'random', 65537, 0, 'sample', 'probe', "pred=('wrong_tail', 65536)", 'obs=ok', 'hyp=None')
+  DISAGREE ('all-256x256x256', 'fp32', 'contig', "pred=('wrong_tail'", 'obs=ok') n= 5 B= [65537, 65538] kinds= ['random']
+     e.g. ('all-256x256x256', 'fp32', 'contig', 'random', 65537, 0, 'sample', 'probe', "pred=('wrong_tail', 65536)", 'obs=ok', 'hyp=None')
+# C on v2/results/raw/studio/20260920T132549-studio.jsonl: rows=48 agree=48 disagree=0
+  agree by predicted class: {('error', 'exact'): 16, ('ok', 'exact'): 12, ('wrong_all', 'exact'): 12, ('wrong_tail', 'exact'): 8}
+# C on v2/results/raw/studio/20260920T135650-studio.jsonl: rows=30 agree=24 disagree=6
+  agree by predicted class: {('wrong_all', 'exact'): 24}
+  DISAGREE ('all-256x256x256', 'fp16', 'contig', "pred=('wrong_tail'", 'obs=ok') n= 3 B= [65537] kinds= ['random']
+     e.g. ('all-256x256x256', 'fp16', 'contig', 'random', 65537, 0, 'full', 'point', "pred=('wrong_tail', 65536)", 'obs=ok', 'hyp=None')
+  DISAGREE ('all-256x256x256', 'fp32', 'contig', "pred=('wrong_tail'", 'obs=ok') n= 3 B= [65537] kinds= ['random']
+     e.g. ('all-256x256x256', 'fp32', 'contig', 'random', 65537, 0, 'full', 'point', "pred=('wrong_tail', 65536)", 'obs=ok', 'hyp=None')

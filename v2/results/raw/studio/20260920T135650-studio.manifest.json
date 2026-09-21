@@ -1,0 +1,411 @@
+{
+ "schema": 2,
+ "run_id": "20260920T135650-studio",
+ "host_tag": "studio",
+ "status": "done",
+ "updated": "2026-09-20T14:10:59",
+ "env": {
+  "os": "Darwin",
+  "os_release": "27.0.0",
+  "arch": "arm64",
+  "macos": "27.0",
+  "macos_build": "26A428",
+  "linux_distro": "",
+  "hw_model": "Mac14,14",
+  "chip": "Apple M2 Ultra",
+  "mem_bytes": 206158430208
+ },
+ "code": {
+  "sha_scan": "abcd1fbb8854a8789eaa8410fa0170997ea3131b6c8933ddd244971c7f316e15",
+  "sha_worker": "a264baa58030174e3fca8e6124baecee94ba18c3bd0ad20293ddf83eabcf90a6",
+  "git_rev": "2e2e28a3b20128bea582e0faf246265874dfdd40",
+  "git_rev_source": "git",
+  "git_dirty_repo": true,
+  "git_dirty_code": false
+ },
+ "worker": {
+  "python": "3.12.12",
+  "torch": "2.14.0",
+  "executable": "/Users/USER/.cache/uv/builds-v0/.tmpvQzEeP/bin/python",
+  "cuda": null
+ },
+ "device": "mps",
+ "torch_req": "2.14.0",
+ "python_req": "3.12",
+ "scale_log2": 0,
+ "op": "bmm",
+ "mode": "points",
+ "worker_cmd": "uv run -q --no-project --python 3.12 --with torch==2.14.0 --with numpy python /Users/USER/Documents/GitHub/mps-boundary/v2/worker.py --device mps '<spec>'",
+ "mem_limit_host_bytes": 123695058124,
+ "mem_limit_dev_bytes": null,
+ "mem_limit_note": "",
+ "wandb": {
+  "enabled": true,
+  "project": "mps-boundary",
+  "every": 25,
+  "url": null,
+  "artifact": "20260920T135650-studio (type sweep-results)",
+  "init_error": null
+ },
+ "invocations": [
+  {
+   "started": "2026-09-20T13:56:50",
+   "argv": [
+    "scan.py",
+    "--host-tag",
+    "studio",
+    "--wandb",
+    "--wandb-every",
+    "25",
+    "--points",
+    "/private/tmp/claude-501/-Users-USER-Documents-GitHub-mps-boundary/c052de50-d718-4933-a777-bc2858dc1f54/scratchpad/studio_q/all256_supp_points.json"
+   ],
+   "code": {
+    "sha_scan": "abcd1fbb8854a8789eaa8410fa0170997ea3131b6c8933ddd244971c7f316e15",
+    "sha_worker": "a264baa58030174e3fca8e6124baecee94ba18c3bd0ad20293ddf83eabcf90a6",
+    "git_rev": "2e2e28a3b20128bea582e0faf246265874dfdd40",
+    "git_rev_source": "git",
+    "git_dirty_repo": true,
+    "git_dirty_code": false
+   }
+  }
+ ],
+ "tol": {
+  "fp16": 0.003872996320821182,
+  "fp32": 1.1509261478398012e-05
+ },
+ "tol_calibration": {
+  "fp16": {
+   "source": "calibrated",
+   "shapes": [
+    "all-256x256x256"
+   ],
+   "n_runs": 3,
+   "max_err": 0.0003872996320821182,
+   "max_err_by_shape": {
+    "all-256x256x256": 0.0003872996320821182
+   },
+   "factor": 10,
+   "floor": 0.001,
+   "tol": 0.003872996320821182
+  },
+  "fp32": {
+   "source": "calibrated",
+   "shapes": [
+    "all-256x256x256"
+   ],
+   "n_runs": 3,
+   "max_err": 1.1509261478398011e-06,
+   "max_err_by_shape": {
+    "all-256x256x256": 1.1509261478398011e-06
+   },
+   "factor": 10,
+   "floor": 1e-06,
+   "tol": 1.1509261478398012e-05
+  }
+ },
+ "points": [
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "aT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "aT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 1,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "aT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 2,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "aT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "aT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 1,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "aT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 2,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "bT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "bT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 1,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "bT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 2,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "bT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "bT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 1,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "bT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 2,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 65537,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 65537,
+   "kind": "random",
+   "seed": 1,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 65537,
+   "kind": "random",
+   "seed": 2,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 1,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 2,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 1,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 2,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 1,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 65537,
+   "kind": "random",
+   "seed": 2,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 1,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 65538,
+   "kind": "random",
+   "seed": 2,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "contig",
+   "B": 65537,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "contig",
+   "B": 65537,
+   "kind": "random",
+   "seed": 1,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  },
+  {
+   "shape": "all-256x256x256",
+   "dtype": "fp16",
+   "layout": "contig",
+   "B": 65537,
+   "kind": "random",
+   "seed": 2,
+   "compare": "full",
+   "label": "all-256 supplement (full)"
+  }
+ ],
+ "elapsed_min": 14.1,
+ "n_rows_new": 36
+}

@@ -1,0 +1,387 @@
+{
+ "schema": 2,
+ "run_id": "20260921T123741-a100",
+ "host_tag": "a100",
+ "status": "done",
+ "updated": "2026-09-21T13:19:37",
+ "env": {
+  "os": "Linux",
+  "os_release": "6.6.122+",
+  "arch": "x86_64",
+  "macos": "",
+  "macos_build": "",
+  "linux_distro": "Ubuntu 24.04.1 LTS",
+  "hw_model": "Google Compute Engine",
+  "chip": "Intel(R) Xeon(R) CPU @ 2.20GHz",
+  "mem_bytes": 179370467328,
+  "n_cpu": 12,
+  "gpu_name": "NVIDIA A100-SXM4-80GB",
+  "gpu_mem_bytes": 85899345920,
+  "gpu_driver": "580.82.07",
+  "gpu_mem_source": "nvidia-smi"
+ },
+ "code": {
+  "sha_scan": "abcd1fbb8854a8789eaa8410fa0170997ea3131b6c8933ddd244971c7f316e15",
+  "sha_worker": "a264baa58030174e3fca8e6124baecee94ba18c3bd0ad20293ddf83eabcf90a6",
+  "git_rev": "90d40f73046c1f7d876b8084948a8274be28f4c4",
+  "git_rev_source": "git",
+  "git_dirty_repo": true,
+  "git_dirty_code": false
+ },
+ "worker": {
+  "python": "3.12.3",
+  "torch": "2.14.0+cu130",
+  "executable": "/root/.cache/uv/builds-v0/.tmpTGbV4Y/bin/python",
+  "cuda": "13.0",
+  "gpu_name": "NVIDIA A100-SXM4-80GB",
+  "gpu_mem_bytes": 85094825984
+ },
+ "device": "cuda",
+ "torch_req": "2.14.0",
+ "python_req": "3.12",
+ "scale_log2": 0,
+ "op": "bmm",
+ "mode": "points",
+ "worker_cmd": "uv run -q --no-project --python 3.12 --with torch==2.14.0 --with numpy python /content/mps-boundary/v2/worker.py --device cuda '<spec>'",
+ "mem_limit_host_bytes": 107622280396,
+ "mem_limit_dev_bytes": 77309411328,
+ "mem_limit_note": "",
+ "wandb": {
+  "enabled": true,
+  "project": "mps-boundary",
+  "every": 25,
+  "url": null,
+  "artifact": "20260921T123741-a100 (type sweep-results)",
+  "init_error": null
+ },
+ "invocations": [
+  {
+   "started": "2026-09-21T12:37:43",
+   "argv": [
+    "scan.py",
+    "--host-tag",
+    "a100",
+    "--device",
+    "cuda",
+    "--torch",
+    "2.14.0",
+    "--wandb",
+    "--wandb-every",
+    "25",
+    "--points",
+    "analysis/chunks/far_in-256x256x64_fp16.json"
+   ],
+   "code": {
+    "sha_scan": "abcd1fbb8854a8789eaa8410fa0170997ea3131b6c8933ddd244971c7f316e15",
+    "sha_worker": "a264baa58030174e3fca8e6124baecee94ba18c3bd0ad20293ddf83eabcf90a6",
+    "git_rev": "90d40f73046c1f7d876b8084948a8274be28f4c4",
+    "git_rev_source": "git",
+    "git_dirty_repo": true,
+    "git_dirty_code": false
+   }
+  }
+ ],
+ "tol": {
+  "fp16": 0.004211458134780279
+ },
+ "tol_calibration": {
+  "fp16": {
+   "source": "calibrated",
+   "shapes": [
+    "in-256x256x64"
+   ],
+   "n_runs": 3,
+   "max_err": 0.00042114581347802793,
+   "max_err_by_shape": {
+    "in-256x256x64": 0.00042114581347802793
+   },
+   "factor": 10,
+   "floor": 0.001,
+   "tol": 0.004211458134780279
+  }
+ },
+ "points": [
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "contig",
+   "B": 131071,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem -1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "contig",
+   "B": 131072,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "contig",
+   "B": 131073,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "contig",
+   "B": 131073,
+   "kind": "idx_a_batch",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "contig",
+   "B": 131073,
+   "kind": "idx_a_rc",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "contig",
+   "B": 131073,
+   "kind": "idx_b_batch",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "contig",
+   "B": 131073,
+   "kind": "idx_b_rc",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 131071,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem -1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 131072,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 131073,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 131073,
+   "kind": "idx_a_batch",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 131073,
+   "kind": "idx_a_rc",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 131073,
+   "kind": "idx_b_batch",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "bT",
+   "B": 131073,
+   "kind": "idx_b_rc",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 131071,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem -1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 131072,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 131073,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 131073,
+   "kind": "idx_a_batch",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 131073,
+   "kind": "idx_a_rc",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 131073,
+   "kind": "idx_b_batch",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "aT",
+   "B": 131073,
+   "kind": "idx_b_rc",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "slice",
+   "B": 131071,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem -1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "slice",
+   "B": 131072,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "slice",
+   "B": 131073,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "slice",
+   "B": 131073,
+   "kind": "idx_a_batch",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "slice",
+   "B": 131073,
+   "kind": "idx_a_rc",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "slice",
+   "B": 131073,
+   "kind": "idx_b_batch",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  },
+  {
+   "shape": "in-256x256x64",
+   "dtype": "fp16",
+   "layout": "slice",
+   "B": 131073,
+   "kind": "idx_b_rc",
+   "seed": 0,
+   "compare": "full",
+   "label": "2x2^32 elem +1"
+  }
+ ],
+ "elapsed_min": 41.9,
+ "n_rows_new": 31
+}

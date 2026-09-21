@@ -181,3 +181,6 @@ cython_debug/
 .cursorindexingignore
 # result logs are evidence
 !results/**/*.log
+
+# result logs are evidence (v2 layout)
+!v*/results/**/*.log

@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this code, the guard or the results, please cite the technical report below."
+message: "If you use this code, the guard or the results, please cite the paper below."
 title: "mps-silent-failures: sweep harness, guard and results for silent failures of PyTorch's MPS backend at the 2^32 boundary"
 type: software
 authors:
@@ -10,8 +10,8 @@ authors:
 repository-code: "https://github.com/jniimi/mps-silent-failures"
 doi: "10.5281/zenodo.22845374"
 license: MIT
-version: "1.0.0"
-date-released: "2026-09-19"
+version: "2.0.0"
+date-released: "2026-09-21"
 keywords:
   - PyTorch
   - Apple Silicon
@@ -20,8 +20,8 @@ keywords:
   - differential testing
   - batched matrix multiplication
 preferred-citation:
-  type: report
-  title: "Silent Failures at the 2^32 Boundary: A Technical Report on Large-Tensor Matrix Multiplication in PyTorch's Apple MPS Backend"
+  type: article
+  title: "Silent Failures Beyond the 32-Bit Index Range: A Differential Characterization of Large-Tensor Matrix Multiplication in PyTorch's MPS Backend"
   authors:
     - family-names: Niimi
       given-names: Junichiro

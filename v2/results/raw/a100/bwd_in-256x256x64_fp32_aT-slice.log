@@ -1,0 +1,95 @@
+Downloading numpy (15.9MiB)
+Downloading pydantic-core (2.0MiB)
+Downloading wandb (24.9MiB)
+ Downloaded pydantic-core
+ Downloaded numpy
+ Downloaded wandb
+Installed 25 packages in 23ms
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /root/.netrc.
+# run_id=20260921T104435-a100 {'os': 'Linux', 'os_release': '6.6.122+', 'arch': 'x86_64', 'macos': '', 'macos_build': '', 'linux_distro': 'Ubuntu 24.04.1 LTS', 'hw_model': 'Google Compute Engine', 'chip': 'Intel(R) Xeon(R) CPU @ 2.20GHz', 'mem_bytes': 179370467328, 'n_cpu': 12, 'gpu_name': 'NVIDIA A100-SXM4-80GB', 'gpu_mem_bytes': 85899345920, 'gpu_driver': '580.82.07', 'gpu_mem_source': 'nvidia-smi'} worker={'python': '3.12.3', 'torch': '2.14.0+cu130', 'executable': '/root/.cache/uv/builds-v0/.tmpQzYsOQ/bin/python', 'cuda': '13.0', 'gpu_name': 'NVIDIA A100-SXM4-80GB', 'gpu_mem_bytes': 85094825984} code=f37baf4 limit=host 100GiB / GPU 72GiB  wandb=(private)
+[   0.3m] calibrate bmm_bwd/in-256x256x64/fp32/contig/random B=  4096 s0 full   -> ok             err=1.13e-06 bad=0/4096 wall=15.59s
+[   0.5m] calibrate bmm_bwd/in-256x256x64/fp32/contig/random B=  4096 s1 full   -> ok             err=1.15e-06 bad=0/4096 wall=13.32s
+[   0.8m] calibrate bmm_bwd/in-256x256x64/fp32/contig/random B=  4096 s2 full   -> ok             err=1.23e-06 bad=0/4096 wall=13.1s
+# tol = {'fp32': 1.2261421649489541e-05}
+[   1.0m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B=  4096 s0 full   -> ok             err=1.13e-06 bad=0/4096 wall=13.62s
+[   1.1m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B=  5632 s0 sample -> ok             err=1.23e-06 bad=0/266 wall=7.36s
+[   1.2m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B=  7168 s0 sample -> ok             err=1.03e-06 bad=0/266 wall=7.75s
+[   1.4m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B=  8704 s0 sample -> ok             err=9.72e-07 bad=0/266 wall=8.66s
+[   1.6m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 10240 s0 sample -> ok             err=9.87e-07 bad=0/266 wall=9.87s
+[   1.7m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 11776 s0 sample -> ok             err=9.61e-07 bad=0/266 wall=10.37s
+[   1.9m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 13312 s0 sample -> ok             err=9.95e-07 bad=0/266 wall=11.05s
+[   2.1m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 14848 s0 sample -> ok             err=9.95e-07 bad=0/266 wall=11.93s
+[   2.3m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 16382 s0 sample -> ok             err=8.69e-07 bad=0/266 wall=12.77s
+[   2.5m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 16383 s0 sample -> ok             err=9.4e-07 bad=0/266 wall=12.79s
+[   2.7m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 16384 s0 sample -> ok             err=9.4e-07 bad=0/266 wall=12.85s
+[   3.0m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 16385 s0 sample -> ok             err=9.1e-07 bad=0/266 wall=12.81s
+[   3.2m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 16386 s0 sample -> ok             err=8.95e-07 bad=0/266 wall=12.8s
+[   3.4m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 18432 s0 sample -> ok             err=1.02e-06 bad=0/271 wall=13.9s
+[   3.7m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 20480 s0 sample -> ok             err=1.02e-06 bad=0/270 wall=14.94s
+[   3.9m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 22528 s0 sample -> ok             err=9.93e-07 bad=0/271 wall=15.93s
+[   4.2m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 24576 s0 sample -> ok             err=1e-06 bad=0/270 wall=17.14s
+[   4.5m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 26624 s0 sample -> ok             err=9.87e-07 bad=0/271 wall=18.25s
+[   4.8m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 28672 s0 sample -> ok             err=1.07e-06 bad=0/271 wall=19.34s
+[   5.2m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 30720 s0 sample -> ok             err=9.87e-07 bad=0/270 wall=20.55s
+[   5.5m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 32766 s0 sample -> ok             err=9.85e-07 bad=0/271 wall=21.5s
+[   5.9m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 32767 s0 sample -> ok             err=1e-06 bad=0/271 wall=21.38s
+[   6.3m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 32768 s0 sample -> ok             err=1e-06 bad=0/271 wall=21.72s
+[   6.6m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 32769 s0 sample -> ok             err=9.56e-07 bad=0/271 wall=21.72s
+[   7.0m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 32770 s0 sample -> ok             err=9.16e-07 bad=0/271 wall=21.28s
+[   7.4m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 36864 s0 sample -> ok             err=9.25e-07 bad=0/276 wall=23.69s
+[   7.8m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 40960 s0 sample -> ok             err=1.02e-06 bad=0/274 wall=25.85s
+[   8.3m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 45056 s0 sample -> ok             err=9.4e-07 bad=0/276 wall=28.37s
+[   8.8m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 49152 s0 sample -> ok             err=1.27e-06 bad=0/274 wall=30.53s
+[   9.3m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 53248 s0 sample -> ok             err=9.23e-07 bad=0/281 wall=32.28s
+[   9.9m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 57344 s0 sample -> ok             err=9.13e-07 bad=0/281 wall=34.65s
+[  10.5m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 61440 s0 sample -> ok             err=1.06e-06 bad=0/278 wall=36.68s
+[  11.1m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 65534 s0 sample -> ok             err=1.04e-06 bad=0/281 wall=38.76s
+[  11.8m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 65535 s0 sample -> ok             err=1.04e-06 bad=0/281 wall=38.85s
+[  12.4m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 65536 s0 sample -> ok             err=1.27e-06 bad=0/281 wall=38.83s
+[  13.1m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 65537 s0 sample -> ok             err=9.1e-07 bad=0/281 wall=38.84s
+[  13.7m] probe     bmm_bwd/in-256x256x64/fp32/aT/random   B= 65538 s0 sample -> ok             err=9.16e-07 bad=0/281 wall=38.69s
+[  14.0m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B=  4096 s0 full   -> ok             err=1.13e-06 bad=0/4096 wall=13.44s
+[  14.1m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B=  5632 s0 sample -> ok             err=1.23e-06 bad=0/266 wall=6.94s
+[  14.2m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B=  7168 s0 sample -> ok             err=1.03e-06 bad=0/266 wall=7.94s
+[  14.3m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B=  8704 s0 sample -> ok             err=9.72e-07 bad=0/266 wall=8.47s
+[  14.5m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 10240 s0 sample -> ok             err=9.87e-07 bad=0/266 wall=8.93s
+[  14.7m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 11776 s0 sample -> ok             err=9.61e-07 bad=0/266 wall=10.05s
+[  14.8m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 13312 s0 sample -> ok             err=9.95e-07 bad=0/266 wall=10.6s
+[  15.0m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 14848 s0 sample -> ok             err=9.95e-07 bad=0/266 wall=11.3s
+[  15.2m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 16382 s0 sample -> ok             err=8.69e-07 bad=0/266 wall=11.81s
+[  15.4m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 16383 s0 sample -> ok             err=9.4e-07 bad=0/266 wall=12.12s
+[  15.6m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 16384 s0 sample -> ok             err=9.4e-07 bad=0/266 wall=11.98s
+[  15.8m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 16385 s0 sample -> ok             err=9.1e-07 bad=0/266 wall=11.9s
+[  16.0m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 16386 s0 sample -> ok             err=8.95e-07 bad=0/266 wall=11.82s
+[  16.2m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 18432 s0 sample -> ok             err=1.02e-06 bad=0/271 wall=13.02s
+[  16.5m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 20480 s0 sample -> ok             err=1.02e-06 bad=0/270 wall=13.91s
+[  16.7m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 22528 s0 sample -> ok             err=9.93e-07 bad=0/271 wall=14.66s
+[  17.0m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 24576 s0 sample -> ok             err=1e-06 bad=0/270 wall=15.9s
+[  17.3m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 26624 s0 sample -> ok             err=9.87e-07 bad=0/271 wall=17.05s
+[  17.6m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 28672 s0 sample -> ok             err=1.07e-06 bad=0/271 wall=18.28s
+[  17.9m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 30720 s0 sample -> ok             err=9.87e-07 bad=0/270 wall=18.66s
+[  18.2m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 32766 s0 sample -> ok             err=9.85e-07 bad=0/271 wall=20.15s
+[  18.6m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 32767 s0 sample -> ok             err=1e-06 bad=0/271 wall=20.32s
+[  18.9m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 32768 s0 sample -> ok             err=1e-06 bad=0/271 wall=20.09s
+[  19.2m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 32769 s0 sample -> ok             err=9.56e-07 bad=0/271 wall=20.05s
+[  19.6m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 32770 s0 sample -> ok             err=9.16e-07 bad=0/271 wall=20.14s
+[  19.9m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 36864 s0 sample -> ok             err=9.25e-07 bad=0/276 wall=21.81s
+[  20.3m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 40960 s0 sample -> ok             err=1.02e-06 bad=0/274 wall=23.95s
+[  20.8m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 45056 s0 sample -> ok             err=9.4e-07 bad=0/276 wall=25.84s
+[  21.2m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 49152 s0 sample -> ok             err=1.27e-06 bad=0/274 wall=28.03s
+[  21.7m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 53248 s0 sample -> ok             err=9.23e-07 bad=0/281 wall=29.18s
+[  22.2m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 57344 s0 sample -> ok             err=9.13e-07 bad=0/281 wall=31.65s
+[  22.8m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 61440 s0 sample -> ok             err=1.06e-06 bad=0/278 wall=33.59s
+[  23.4m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 65534 s0 sample -> ok             err=1.04e-06 bad=0/281 wall=35.78s
+[  24.0m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 65535 s0 sample -> ok             err=1.04e-06 bad=0/281 wall=35.72s
+[  24.6m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 65536 s0 sample -> ok             err=1.27e-06 bad=0/281 wall=35.4s
+[  25.2m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 65537 s0 sample -> ok             err=9.1e-07 bad=0/281 wall=35.95s
+[  25.8m] probe     bmm_bwd/in-256x256x64/fp32/slice/random B= 65538 s0 sample -> ok             err=9.16e-07 bad=0/281 wall=36.01s
+[  28.5m] final     bmm_bwd/in-256x256x64/fp32/aT/random   B= 65538 s0 full   -> ok             err=1.32e-06 bad=0/65538 wall=163.77s
+[  31.2m] final     bmm_bwd/in-256x256x64/fp32/aT/random   B= 65538 s1 full   -> ok             err=1.5e-06 bad=0/65538 wall=163.57s
+[  34.0m] final     bmm_bwd/in-256x256x64/fp32/aT/random   B= 65538 s2 full   -> ok             err=1.42e-06 bad=0/65538 wall=164.15s
+[  36.7m] final     bmm_bwd/in-256x256x64/fp32/slice/random B= 65538 s0 full   -> ok             err=1.32e-06 bad=0/65538 wall=161.5s
+[  39.4m] final     bmm_bwd/in-256x256x64/fp32/slice/random B= 65538 s1 full   -> ok             err=1.5e-06 bad=0/65538 wall=161.74s
+[  42.1m] final     bmm_bwd/in-256x256x64/fp32/slice/random B= 65538 s2 full   -> ok             err=1.42e-06 bad=0/65538 wall=162.16s
+# 新規 83 実行, 42.1 分。W&B の送信完了を待つ
+-> /content/mb/results/summary/a100/20260921T104435-a100.md
