@@ -1,11 +1,11 @@
 # mps-silent-failures
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22845374.svg)](https://doi.org/10.5281/zenodo.22845374)
+[![arXiv](https://img.shields.io/badge/arXiv-2609.22991-b31b1b.svg)](https://arxiv.org/abs/2609.22991)
 
 Code and results for the paper
 
-<!-- TODO(arxiv-id): replace "to be added" with the arXiv link once the identifier is assigned -->
-> Junichiro Niimi. *Silent Failures Beyond the 32-Bit Index Range: A Differential Characterization of Large-Tensor Matrix Multiplication in PyTorch's MPS Backend.* 2026. [PDF](paper.pdf) (arXiv link: to be added)
+> Junichiro Niimi. *Silent Failures Beyond the 32-Bit Index Range: A Differential Characterization of Large-Tensor Matrix Multiplication in PyTorch's MPS Backend.* 2026. [arXiv:2609.22991](https://arxiv.org/abs/2609.22991), [doi:10.48550/arXiv.2609.22991](https://doi.org/10.48550/arXiv.2609.22991). [PDF](paper.pdf)
 
 PyTorch's MPS backend returns **wrong values without an error or a warning** for batched matrix multiplication on tensors with more than 2**32 elements. This affects `torch.bmm`, and therefore `torch.matmul` and eager attention. We observed it in every PyTorch release we tested, from 2.4.1 to 2.14.0. Upstream issue: [pytorch/pytorch#197636](https://github.com/pytorch/pytorch/issues/197636).
 
@@ -155,13 +155,15 @@ Machine A: Mac Studio (Mac14,14), Apple M2 Ultra, 192 GB unified memory, macOS 2
 
 Please cite the paper. To refer to the code and the results themselves, use the Zenodo record, [doi:10.5281/zenodo.22845374](https://doi.org/10.5281/zenodo.22845374), which always resolves to the latest version.
 
-<!-- TODO(arxiv-id): replace the note with eprint / archivePrefix fields once the identifier is assigned -->
 ```bibtex
 @misc{niimi2026mps,
-  author = {Niimi, Junichiro},
-  title  = {Silent Failures Beyond the 32-Bit Index Range: A Differential Characterization of Large-Tensor Matrix Multiplication in {PyTorch}'s {MPS} Backend},
-  year   = {2026},
-  note   = {arXiv identifier to be added}
+  author        = {Niimi, Junichiro},
+  title         = {Silent Failures Beyond the 32-Bit Index Range: A Differential Characterization of Large-Tensor Matrix Multiplication in {PyTorch}'s {MPS} Backend},
+  year          = {2026},
+  eprint        = {2609.22991},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  doi           = {10.48550/arXiv.2609.22991}
 }
 ```
 

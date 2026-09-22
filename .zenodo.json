@@ -22,6 +22,11 @@
   ],
   "related_identifiers": [
     {
+      "identifier": "10.48550/arXiv.2609.22991",
+      "relation": "isSupplementTo",
+      "resource_type": "publication-preprint"
+    },
+    {
       "identifier": "https://github.com/pytorch/pytorch/issues/197636",
       "relation": "isSupplementTo",
       "resource_type": "other"
