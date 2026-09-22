@@ -10,8 +10,8 @@ authors:
 repository-code: "https://github.com/jniimi/mps-silent-failures"
 doi: "10.5281/zenodo.22845374"
 license: MIT
-version: "2.0.0"
-date-released: "2026-09-21"
+version: "2.1.0"
+date-released: "2026-09-22"
 keywords:
   - PyTorch
   - Apple Silicon
