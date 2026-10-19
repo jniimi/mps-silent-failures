@@ -5,19 +5,19 @@
 
 Code and results for the paper
 
-> Junichiro Niimi. *Silent Failures Beyond the 32-Bit Index Range: A Differential Characterization of Large-Tensor Matrix Multiplication in PyTorch's MPS Backend.* 2026. [arXiv:2609.22991](https://arxiv.org/abs/2609.22991), [doi:10.48550/arXiv.2609.22991](https://doi.org/10.48550/arXiv.2609.22991). [PDF](paper.pdf)
+> Junichiro Niimi. *Silent Failures Beyond the 32-Bit Index Range: A Differential Characterization of Large-Tensor Matrix Multiplication in PyTorch's MPS Backend.* 2026. [arXiv:2609.22991](https://arxiv.org/abs/2609.22991), [doi:10.48550/arXiv.2609.22991](https://doi.org/10.48550/arXiv.2609.22991).
 
 PyTorch's MPS backend returns **wrong values without an error or a warning** for batched matrix multiplication on tensors with more than 2**32 elements. This affects `torch.bmm`, and therefore `torch.matmul` and eager attention. We observed it in every PyTorch release we tested, from 2.4.1 to 2.14.0. Upstream issue: [pytorch/pytorch#197636](https://github.com/pytorch/pytorch/issues/197636).
 
-What the paper (`paper.pdf`, the second arXiv version) finds:
+What the paper (the third arXiv version) finds:
 
-- **Three rules account for every outcome on 2.14.0.** When the output exceeds 2**32 elements and an operand is a transposed view, the entire output is wrong and equals a computation that ignores that operand's strides. Otherwise, a view with at least 2**31 elements raises an exception, and a contiguous input above 2**32 elements makes exactly the batches beyond that point wrong, equal to a computation whose index wraps at 2**32. A slightly larger problem can thus turn an explicit error into a silent failure. The rules reproduce all 1376 outcomes with random inputs, including the series in which inputs and output exceed 2**32 elements together and the points near 2 * 2**32 elements.
-- **Training is affected where inference is not.** With contiguous operands and an output just above 2**32 elements, the forward pass is correct and both gradients are silently wrong. The same rules, applied to the two products that define the gradients, reproduce all 592 outcomes of the backward sweep.
+- **Three rules account for every outcome on 2.14.0.** When the output exceeds 2**32 elements and an operand is a transposed view, the entire output is wrong and equals a computation that ignores that operand's strides. Otherwise, a view with at least 2**31 elements raises an exception, and in a contiguous input above 2**32 elements exactly the batches that start at element 2**32 or later are wrong, equal to a computation whose batch offset wraps at 2**32; a batch that only crosses element 2**32 is read correctly. A slightly larger problem can thus turn an explicit error into a silent failure. The rules reproduce all 1397 outcomes with random inputs, including the series in which inputs and output exceed 2**32 elements together, the points near 2 * 2**32 elements, and two shapes in which the boundary falls inside a batch.
+- **Training is affected where inference is not.** With contiguous operands and an output just above 2**32 elements, the forward pass is correct and both gradients are silently wrong. The same rules, applied to the two products that define the gradients, reproduce all 592 outcomes of the backward sweep. With a cross-entropy loss applied directly to the output of the product, these gradients reach a training step in exactly the batches that the rules predict.
 - **Deterministic across machines and macOS versions.** An M2 Max under macOS 26.6.2, the same machine under macOS 27.0 and an M2 Ultra under macOS 27.0 agree in all 6156 common runs of every series, for correct and wrong results alike and for all 11 PyTorch versions. The same sweeps on an NVIDIA A100, including the backward pass, are correct in all 2530 runs.
 - **Real workloads are affected.** In a public sentiment classifier with eager attention, one oversized batch corrupts a third of the outputs, which collapse onto one class.
-- **One rule is enough in practice.** Do not create or read an MPS tensor with 2**32 or more elements. Applied to the recorded outcomes of all 11 versions, this rule stops all 481 silent runs, and no run below 2**32 elements is silently wrong.
+- **One rule covers the `bmm` failures.** Do not create or read an MPS tensor with 2**32 or more elements. Applied to the recorded outcomes of the `bmm` sweeps of all 11 versions, this rule stops all 481 silent runs, and no run of these sweeps below 2**32 elements is silently wrong. It does not cover every operation: `nll_loss` and `cross_entropy` return wrong per-sample losses from 2**31 input elements ([pytorch/pytorch#198471](https://github.com/pytorch/pytorch/issues/198471)).
 
-All findings are obtained from observable behavior: the kernels below PyTorch's MPS backend are closed source, so this repository records what the backend returns compared with reference results and does not analyze the implementation.
+All findings are obtained from observable behavior: this repository records what the backend returns compared with reference results, wherever in the software stack a fault lies, and does not analyze the implementation.
 
 ## Minimal reproduction
 
@@ -38,7 +38,7 @@ import mps_guard
 mps_guard.install()   # from here on, any MPS op touching >= 2**32 elements raises Over2Pow32Error
 ```
 
-It is a `TorchDispatchMode` that checks the inputs and outputs of every aten op. For `mm`, `bmm`, `addmm`, `baddbmm` and fused SDPA it estimates the size before running the op, because some PyTorch versions crash inside the op. The threshold is inclusive because PyTorch 2.4.1 returns zeros for a view with exactly 2**32 elements; below 2**32 elements, no run of the sweep in any version is silently wrong. For `bmm` the error message states how many batches per chunk stay below the limit. The rule also prevents the silently wrong gradients, because the forward output, which has the size of the upstream gradient, is stopped first. Overhead measured with `guard/bench_guard.py`: 1.73x on a small training loop (2000 steps, 1024 x 120 inputs) and 1.00x on large attention forward passes. Set `MPS_GUARD=0` to disable `install()`.
+It is a `TorchDispatchMode` that checks the inputs and outputs of every aten op. For `mm`, `bmm`, `addmm`, `baddbmm` and fused SDPA it estimates the size before running the op, because some PyTorch versions crash inside the op. The threshold is inclusive because PyTorch 2.4.1 returns zeros for a view with exactly 2**32 elements; below 2**32 elements, no run of the sweep in any version is silently wrong. For `bmm` the error message states how many batches per chunk stay below the limit. The rule also prevents the silently wrong gradients, because the forward output, which has the size of the upstream gradient, is stopped first. The guard is limited to the failures characterized in the paper: `nll_loss` and `cross_entropy` go wrong from 2**31 input elements, below its threshold ([pytorch/pytorch#198471](https://github.com/pytorch/pytorch/issues/198471)); computing the loss as `-F.log_softmax(x, -1).gather(1, t[:, None])` avoids that failure. Overhead measured with `guard/bench_guard.py`: 1.73x on a small training loop (2000 steps, 1024 x 120 inputs) and 1.00x on large attention forward passes. Set `MPS_GUARD=0` to disable `install()`.
 
 ## Contents
 
@@ -47,7 +47,6 @@ It is a `TorchDispatchMode` that checks the inputs and outputs of every aten op.
 | `v1/` | Code and results as of the first arXiv version (a technical report): one machine, one macOS version. Frozen: these are the files that were at the top level of this repository up to v1.0.x. The first-pass results (`v1/firstpass/results/`), the case-study outputs (`v1/results/workload/`) and the CUDA control on an A100 (`v1/results/raw/a100/`, `v1/results/cuda/`) are here. |
 | `v2/` | The current harness, the results reported in the paper, and the analysis scripts. See the next table. |
 | `guard/` | `mps_guard.py`, the guard described above, and `bench_guard.py`, its overhead benchmark. |
-| `paper.pdf` | The paper (second arXiv version). |
 | `pyproject.toml`, `uv.lock` | The `uv` project used by `uv run python ...`. PyTorch is not a dependency (see below). |
 
 ### `v2/`
@@ -64,19 +63,27 @@ It is a `TorchDispatchMode` that checks the inputs and outputs of every aten op.
 | `check_idx_invariance.py` | CPU-only check that the index-encoded runs which the rules predict to be wrong, but which are correct, use inputs that are unchanged by the predicted misreading. |
 | `colab_chunks.py` | Runs the sweep on a Colab GPU in chunks, one run per chunk, because a Colab session does not last for the whole sweep. In v2 it also covers the backward, (256, 256, 256), offset and far-point series. |
 | `cuda_ref.py` | CUDA control runs on an A100 for the first-pass configurations (unchanged from `v1/`). |
-| `demo_workload.py` | Case study on a real workload: a RoBERTa sentiment classifier with eager attention on TweetEval, one large batch against chunked execution (unchanged from `v1/`). |
+| `demo_workload.py` | Case study on a real workload: a RoBERTa sentiment classifier with eager attention on TweetEval, one large batch against chunked execution (the computation is unchanged from `v1/`; the figure is now also written as PDF). |
 | `workload_stats.py` | Recomputes the case-study statistics from the saved logits, without rerunning on MPS. |
+| `plot_workload.py` | Redraws the figure of the case study from the saved results in `v1/results/workload/`, without rerunning on MPS. |
+| `demo_train_step.py` | One training step of the case-study model (forward, cross-entropy, backward) against the accumulated gradients of chunks. Results in `results/train_step/`. |
+| `probe_bwd_heads.py` | One training step in which the output of a product (`bmm`, or the self-attention relation of MiniLMv2) enters a loss directly, for six losses, against chunked references. Results in `results/bwd_heads/`. |
+| `points_nonpow2.json`, `points_nonpow2.md` | The points of the two shapes in which the boundary falls inside a batch (62,500 elements per matrix), for `scan.py --points`, and their description. |
+| `check_hyp_wrap.py` | CPU-only test of the wrapped-index hypothesis of `worker.py` when the wrap falls inside a batch or a row. |
+| `provenance/` | The earlier `scan.py` and `worker.py` recorded by most manifests (see "Script hashes" below). |
 | `analysis/` | Scripts that check the rules against the recorded outcomes (`rules.py`, `rules_bwd.py`, `analyze.py`; output in `rules_all.txt`), the point lists passed to `scan.py --points` (far points, supplement of the (256, 256, 256) shape), and the queues that were actually run. See `analysis/README.md`. |
 | `cloud/` | Helper scripts for running the sweep on a remote Mac over SSH (setup, sweep over macOS versions, pulling results). |
-| `firstpass/` | First-pass test suite over 26 test cases (`check_mps.py`, `run_matrix.sh`), the minimal reproductions (`issue_repro.py` for the forward pass, `issue_repro_backward.py` for the gradients), and `sdpa_ops.py`, which records the aten op that fused attention resolves to on MPS. The published first-pass results are in `v1/firstpass/results/`. |
+| `firstpass/` | First-pass test suite over 26 test cases (`check_mps.py`, `run_matrix.sh`), the minimal reproductions (`issue_repro.py` for the forward pass, `issue_repro_backward.py` for the gradients, `issue_repro_nll_loss.py` for pytorch/pytorch#198471), the probes behind that report (`probe_nll_loss.py`, `probe_nll_loss_edge.py`), and `sdpa_ops.py`, which records the aten op that fused attention resolves to on MPS. The published first-pass results are in `v1/firstpass/results/`. |
 | `results/raw/<host-tag>/` | One JSON line per executed configuration (`<run_id>.jsonl`), and a manifest per run (`<run_id>.manifest.json`: environment, versions, script hashes, tolerances, command line). |
+| `results/train_step/`, `results/bwd_heads/` | Results of `demo_train_step.py` and `probe_bwd_heads.py` (machine A, PyTorch 2.14.0). |
+| `results/nll_loss/` | Results behind pytorch/pytorch#198471: the MPS runs (`nll_loss.md`) and the same scripts on an A100 (`a100/`). |
 | `results/summary/` | Per-run summaries (`<host-tag>/<run_id>.md`), the overview of the v2 series (`studio/v2_axes_studio.md`), and the comparisons between hosts (`hosts_*.md`). `hosts_rows_studio_mbp26_mbp27.md` is the row-by-row comparison of the three configurations. |
 
 ### Hosts in `v2/results/raw/`
 
 | host-tag | Machine | What it contains |
 |---|---|---|
-| `studio` | Mac Studio, M2 Ultra, macOS 27.0 | 16 runs, 6348 rows |
+| `studio` | Mac Studio, M2 Ultra, macOS 27.0 | 17 runs, 6378 rows: the 16 runs below, and one run of the two shapes with the boundary inside a batch (`points_nonpow2.json`, 30 rows, this host only) |
 | `mbp-macos26` | MacBook Pro, M2 Max, macOS 26.6.2 | the same 16 runs |
 | `mbp-macos27` | the same MacBook Pro after the upgrade to macOS 27.0 | the same 16 runs |
 | `a100` | Google Colab, NVIDIA A100-SXM4-80GB, PyTorch 2.14.0+cu130 (CUDA control) | the same series as `studio` on PyTorch 2.14.0 (no reduced sweep), split into 37 runs because a hosted session is short: main sweep 18, backward 8, (256, 256, 256) 4, its repeated points 2, far points 4, offset 1; 2530 rows, all correct |
@@ -110,6 +117,7 @@ uv run python scan.py --host-tag myhost --budget-hours 24 --shapes all-256x256x2
 uv run python scan.py --host-tag myhost --budget-hours 24 --layouts offset --shapes out-256x64x256,in-256x256x64 # offset
 uv run python scan.py --host-tag myhost --points analysis/far_points_full.json      # far points
 uv run python scan.py --host-tag myhost --points analysis/all256_supp_points.json   # supplement of the (256, 256, 256) shape
+uv run python scan.py --host-tag myhost --points points_nonpow2.json               # boundary inside a batch
 ./run_versions.sh 2.13.0                             # reduced sweep per PyTorch version (writes under host-tag "studio")
 cd firstpass && ./run_matrix.sh                      # first-pass suite, all 11 versions
 ```
@@ -128,9 +136,9 @@ uv run python compare_rows.py --source results:studio --source results:mbp-macos
 echo $?   # 0
 ```
 
-It exits with 0 and reports, for each of the three pairs, 16 matching series and 6156 common runs, all 6156 identical in every compared field, and none present on one side only. The report is written to `results/summary/hosts_rows.md` (change with `--out`) and should be identical to the published `results/summary/hosts_rows_studio_mbp26_mbp27.md`. The fields that are excluded from the comparison (identifiers, the description of the host, measured time and memory, the stderr of a crash) are listed at the top of the report. A difference in any other field, a run present on one side only, or a manifest that differs in the script hashes, the tolerances, the PyTorch version or the point list makes the script exit with 1.
+It exits with 0 and reports, for each of the three pairs, 16 matching series and 6156 common runs, all 6156 identical in every compared field, and none present on one side only. The run with the boundary inside a batch exists on `studio` only; it is listed as such and is not counted as a difference. The report is written to `results/summary/hosts_rows.md` (change with `--out`) and should be identical to the published `results/summary/hosts_rows_studio_mbp26_mbp27.md`. The fields that are excluded from the comparison (identifiers, the description of the host, measured time and memory, the stderr of a crash) are listed at the top of the report. A difference in any other field, a run present on one side only, or a manifest that differs in the script hashes, the tolerances, the PyTorch version or the point list makes the script exit with 1.
 
-**Script hashes.** Every manifest records the `sha256` of the scripts that produced it (`code.sha_scan`, `code.sha_worker`). All published manifests in `v2/results/raw/` record the same pair, and it matches the files here (the second command prints each hash with a count; there should be one line per script):
+**Script hashes.** Every manifest records the `sha256` of the scripts that produced it (`code.sha_scan`, `code.sha_worker`). The 16 runs of each host and all runs of the CUDA control record the same pair, which belongs to the earlier versions kept in `v2/provenance/` (`scan.abcd1fbb8854.py`, `worker.a264baa58030.py`). The run with the boundary inside a batch records the pair of the current `v2/scan.py` and `v2/worker.py`, which add these shapes to the earlier versions and apply the wrapped-index hypothesis element by element, so that it also holds when the wrap falls inside a batch; for the shapes of the 16 runs they compute the same values. The second command prints each hash with a count; there should be two lines per script:
 
 ```sh
 shasum -a 256 v2/scan.py v2/worker.py
@@ -149,7 +157,8 @@ Machine A: Mac Studio (Mac14,14), Apple M2 Ultra, 192 GB unified memory, macOS 2
 - **Provenance.** Manifests and result rows record a git revision. It refers to the private development repository, not to this one. To check that the published scripts are the ones that produced a result, compare the hashes as shown above. For `v1/`, `scan.py` gained options between runs, so earlier runs record a different hash; those earlier revisions are kept in `v1/provenance/` as `scan.<first 12 hex digits of the sha256>.py`.
 - **Weights & Biases.** The published runs were backed up to a private W&B project with `--wandb`. This is off by default and is not needed to run the sweep or to check the results; everything is in `results/raw/`.
 - **Language.** Comments and docstrings in the code are in Japanese, and so are the per-run summaries and comparison reports. They are left as they are, because editing the scripts would change the recorded hashes.
-- **Status.** This is the state of the second arXiv version of the paper: two machines of the M2 generation, macOS 26.6.2 and 27.0. We did not run macOS 14 or 15, and other chip generations are untested.
+- **Status.** This is the state of the third arXiv version of the paper: two machines of the M2 generation, macOS 26.6.2 and 27.0. We did not run macOS 14 or 15, and other chip generations are untested.
+- **Other reports.** Two further silent failures found along the way are reported separately and are outside the scope of the guard: [pytorch/pytorch#198471](https://github.com/pytorch/pytorch/issues/198471) (`nll_loss` / `cross_entropy` from 2**31 input elements) and [pytorch/pytorch#198473](https://github.com/pytorch/pytorch/issues/198473) (`torch.arange` above 2**32 elements on 2.14.0).
 
 ## Citation
 
@@ -169,4 +178,4 @@ Please cite the paper. To refer to the code and the results themselves, use the 
 
 ## License
 
-The code, the guard and the result files are released under the MIT License (see `LICENSE`). The paper (`paper.pdf`) is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+The code, the guard and the result files are released under the MIT License (see `LICENSE`). The paper is not part of this repository; it is available on arXiv ([arXiv:2609.22991](https://arxiv.org/abs/2609.22991)).
