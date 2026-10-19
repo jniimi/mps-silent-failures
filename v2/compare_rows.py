@@ -70,6 +70,8 @@ def label_of(sig: tuple) -> str:
     if mode == "points":
         if all(s.startswith("all-") for s in shapes):
             name = "all-256 supplement"
+        elif all("-250x" in s for s in shapes):
+            name = "boundary inside a batch"  # 2 の冪でない shape(*-250x*、points_nonpow2.json)
         elif op == "bmm" and not any(s.startswith("all-") for s in shapes) and "offset" not in layouts:
             name = "far points"
         else:
@@ -85,7 +87,8 @@ def label_of(sig: tuple) -> str:
     return f"{name} {v}"
 
 
-LABEL_ORDER = ["main sweep", "reduced sweep", "backward", "all-256", "all-256 supplement", "far points", "offset", "other points"]
+LABEL_ORDER = ["main sweep", "reduced sweep", "backward", "all-256", "all-256 supplement", "far points", "offset",
+               "boundary inside a batch", "other points"]
 
 
 def sig_order(sig: tuple) -> tuple:

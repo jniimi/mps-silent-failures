@@ -1,0 +1,41 @@
+# run: issue_repro_nll_loss
+# date (UTC): 2026-09-24T08:17:06Z
+# GPU: NVIDIA A100-SXM4-80GB, 81920 MiB, 580.82.07
+# python / torch: Python 3.12.3 | torch 2.14.0+cu130 | torch.version.cuda 13.0
+# original script sha256: 792e147e93d5eac621b9e895a7cb6940a780bdc21be6d7ae2bab01e8e9694cae  (repository v2/firstpass/issue_repro_nll_loss.py at commit 1554967)
+# cwd: /content/work/v2
+# command: PYTHONUNBUFFERED=1 /content/venv/bin/python firstpass/issue_repro_nll_loss.py
+#
+# The copy that was run was made on the VM with:
+#   sed -e 's/"mps"/"cuda"/g' -e 's/on MPS/on CUDA/g' orig/firstpass/issue_repro_nll_loss.py > v2/firstpass/issue_repro_nll_loss.py
+# diff -u (original from the repository vs. the copy that was run):
+--- orig/firstpass/issue_repro_nll_loss.py	2026-09-24 08:15:51.839165797 +0000
++++ v2/firstpass/issue_repro_nll_loss.py	2026-09-24 08:16:03.251404191 +0000
+@@ -5,7 +5,7 @@
+ N, C = 2**23 + 2**16, 256                  # input has 2**31 + 2**24 elements
+ x = torch.rand(N, C) * 8 - 4
+ t = torch.randint(0, C, (N,))
+-xm, tm = x.to("mps"), t.to("mps")
++xm, tm = x.to("cuda"), t.to("cuda")
+ 
+ loss = F.cross_entropy(xm, tm, reduction="none").cpu()
+ ref = F.cross_entropy(x, t, reduction="none")          # CPU
+@@ -13,5 +13,5 @@
+ beyond = torch.arange(N) * C + t >= 2**31              # flat index of the target element
+ print("wrong rows:", bad.sum().item(), "| rows whose target lies at flat index >= 2**31:", beyond.sum().item(),
+       "| same rows:", torch.equal(bad, beyond), "| wrong values that are 0:", (loss[bad] == 0).sum().item())
+-print("sum on MPS:", F.cross_entropy(xm, tm, reduction="sum").item(), "| CPU:", ref.double().sum().item())
+-print("-log_softmax(x).gather(...).sum() on MPS:", (-F.log_softmax(xm, -1).gather(1, tm[:, None])).sum().item())
++print("sum on CUDA:", F.cross_entropy(xm, tm, reduction="sum").item(), "| CPU:", ref.double().sum().item())
++print("-log_softmax(x).gather(...).sum() on CUDA:", (-F.log_softmax(xm, -1).gather(1, tm[:, None])).sum().item())
+
+# ---- stdout/stderr of the run ----
+wrong rows: 0 | rows whose target lies at flat index >= 2**31: 65536 | same rows: False | wrong values that are 0: 0
+sum on CUDA: 63054880.0 | CPU: 63054878.216116905
+-log_softmax(x).gather(...).sum() on CUDA: 63054880.0
+# ---- end of run ----
+# exit code: 0
+# wall time: 24.452672751 s
+# max GPU memory.used seen by nvidia-smi (polled every 0.5 s): 17118 MiB
+# max resident set size of the process (/usr/bin/time -v): 17753684 kB
+# finished (UTC): 2026-09-24T08:17:32Z

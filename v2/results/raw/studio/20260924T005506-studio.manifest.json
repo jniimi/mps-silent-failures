@@ -1,0 +1,330 @@
+{
+ "schema": 2,
+ "run_id": "20260924T005506-studio",
+ "host_tag": "studio",
+ "status": "done",
+ "updated": "2026-09-24T01:00:17",
+ "env": {
+  "os": "Darwin",
+  "os_release": "27.0.0",
+  "arch": "arm64",
+  "macos": "27.0",
+  "macos_build": "26A428",
+  "linux_distro": "",
+  "hw_model": "Mac14,14",
+  "chip": "Apple M2 Ultra",
+  "mem_bytes": 206158430208
+ },
+ "code": {
+  "sha_scan": "ccec78cc14c2881ffcfa4e618e44cdc6ae4ca23562365af4bf55da5998cd6ae1",
+  "sha_worker": "c51f00cdd8ba1915e6a9070d00e29a3f9c8471ec9590b016d5d7871f53d10258",
+  "git_rev": "f00e977977daea4e2a4a5d2d6c511da7c4cb2a11",
+  "git_rev_source": "git",
+  "git_dirty_repo": true,
+  "git_dirty_code": false
+ },
+ "worker": {
+  "python": "3.12.12",
+  "torch": "2.14.0",
+  "executable": "/Users/USER/.cache/uv/builds-v0/.tmpbq0F8I/bin/python",
+  "cuda": null
+ },
+ "device": "mps",
+ "torch_req": "2.14.0",
+ "python_req": "3.12",
+ "scale_log2": 0,
+ "op": "bmm",
+ "mode": "points",
+ "worker_cmd": "uv run -q --no-project --python 3.12 --with torch==2.14.0 --with numpy python /Users/USER/Documents/GitHub/mps-boundary/v2/worker.py --device mps '<spec>'",
+ "mem_limit_host_bytes": 123695058124,
+ "mem_limit_dev_bytes": null,
+ "mem_limit_note": "",
+ "wandb": {
+  "enabled": false
+ },
+ "invocations": [
+  {
+   "started": "2026-09-24T00:55:07",
+   "argv": [
+    "scan.py",
+    "--host-tag",
+    "studio",
+    "--points",
+    "points_nonpow2.json"
+   ],
+   "code": {
+    "sha_scan": "ccec78cc14c2881ffcfa4e618e44cdc6ae4ca23562365af4bf55da5998cd6ae1",
+    "sha_worker": "c51f00cdd8ba1915e6a9070d00e29a3f9c8471ec9590b016d5d7871f53d10258",
+    "git_rev": "f00e977977daea4e2a4a5d2d6c511da7c4cb2a11",
+    "git_rev_source": "git",
+    "git_dirty_repo": true,
+    "git_dirty_code": false
+   }
+  }
+ ],
+ "tol": {
+  "fp32": 1.2716054505067216e-05
+ },
+ "tol_calibration": {
+  "fp32": {
+   "source": "calibrated",
+   "shapes": [
+    "in-250x250x64",
+    "out-250x64x250"
+   ],
+   "n_runs": 6,
+   "max_err": 1.2716054505067217e-06,
+   "max_err_by_shape": {
+    "in-250x250x64": 1.2716054505067217e-06,
+    "out-250x64x250": 5.716070125665573e-07
+   },
+   "factor": 10,
+   "floor": 1e-06,
+   "tol": 1.2716054505067216e-05
+  }
+ },
+ "points": [
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 34359,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "a < 2^31 (2^31 elem -1)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 34360,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "a >= 2^31 (2^31 elem)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 68719,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "a < 2^32 (2^32 elem -1)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 68720,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "elem 2^32 = batch 68719 pos 29796 (2^32 elem)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 68721,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "batch 68720 wholly beyond 2^32 (2^32 elem +1)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "bT",
+   "B": 68719,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "a < 2^32 (2^32 elem -1)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "bT",
+   "B": 68720,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "elem 2^32 = batch 68719 pos 29796 (2^32 elem)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "aT",
+   "B": 34359,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "a < 2^31 (2^31 elem -1)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "aT",
+   "B": 34360,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "a >= 2^31 (2^31 elem)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "aT",
+   "B": 68720,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "elem 2^32 = batch 68719 pos 29796 (2^32 elem)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "slice",
+   "B": 34359,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "a < 2^31 (2^31 elem -1)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "slice",
+   "B": 34360,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "a >= 2^31 (2^31 elem)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "slice",
+   "B": 68720,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "elem 2^32 = batch 68719 pos 29796 (2^32 elem)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 68721,
+   "kind": "idx_a_rc",
+   "seed": 0,
+   "compare": "full",
+   "label": "batch 68720 wholly beyond 2^32 (2^32 elem +1)"
+  },
+  {
+   "shape": "in-250x250x64",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 68721,
+   "kind": "idx_a_batch",
+   "seed": 0,
+   "compare": "full",
+   "label": "batch 68720 wholly beyond 2^32 (2^32 elem +1)"
+  },
+  {
+   "shape": "out-250x64x250",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 68719,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "out < 2^32 (2^32 elem -1)"
+  },
+  {
+   "shape": "out-250x64x250",
+   "dtype": "fp32",
+   "layout": "contig",
+   "B": 68720,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "out > 2^32 (2^32 elem)"
+  },
+  {
+   "shape": "out-250x64x250",
+   "dtype": "fp32",
+   "layout": "bT",
+   "B": 68719,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "out < 2^32 (2^32 elem -1)"
+  },
+  {
+   "shape": "out-250x64x250",
+   "dtype": "fp32",
+   "layout": "bT",
+   "B": 68720,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "out > 2^32 (2^32 elem)"
+  },
+  {
+   "shape": "out-250x64x250",
+   "dtype": "fp32",
+   "layout": "aT",
+   "B": 68719,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "out < 2^32 (2^32 elem -1)"
+  },
+  {
+   "shape": "out-250x64x250",
+   "dtype": "fp32",
+   "layout": "aT",
+   "B": 68720,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "out > 2^32 (2^32 elem)"
+  },
+  {
+   "shape": "out-250x64x250",
+   "dtype": "fp32",
+   "layout": "slice",
+   "B": 68719,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "out < 2^32 (2^32 elem -1)"
+  },
+  {
+   "shape": "out-250x64x250",
+   "dtype": "fp32",
+   "layout": "slice",
+   "B": 68720,
+   "kind": "random",
+   "seed": 0,
+   "compare": "full",
+   "label": "out > 2^32 (2^32 elem)"
+  },
+  {
+   "shape": "out-250x64x250",
+   "dtype": "fp32",
+   "layout": "bT",
+   "B": 68720,
+   "kind": "idx_b_rc",
+   "seed": 0,
+   "compare": "full",
+   "label": "out > 2^32 (2^32 elem)"
+  }
+ ],
+ "elapsed_min": 5.2,
+ "n_rows_new": 30
+}

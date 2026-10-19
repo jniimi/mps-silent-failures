@@ -12,6 +12,7 @@ v2 で足した軸(どれも既定の引数では無効で、既定の計画は 
     uv run python scan.py --host-tag studio --far 3                                                  # 2·2**32、3·2**32 の前後
     uv run python scan.py --host-tag studio --dtypes bf16 --shapes out-256x64x256,in-256x256x64      # bfloat16
     uv run python scan.py --host-tag studio --points points.json                                     # 指定した点だけ
+    uv run python scan.py --host-tag studio --points points_nonpow2.json   # 2 の冪でない shape(*-250x*。予測は points_nonpow2.md)
     uv run python scan.py --host-tag studio --op bmm_bwd --shapes out-256x64x256,in-256x256x64       # backward(下の --op)
   offset 系列: B は固定(--offset-B、既定 4096)で、a, b の格納の先頭に置く pad_batches O を振る(view = 格納[O:])。
     storage_offset(a, b の大きい方の要素数)が各境界に達する O0 の O0-2〜O0+2、O = 1、その間に --grid-offset 点。
@@ -83,8 +84,13 @@ SHAPES = [
 ]
 # v2 の追加 shape(既定の --shapes には入れない。既定の計画を v1 と同じに保つため)。cross = all: a・b・出力が同時に B·2**16 要素。
 # all_dtypes: 追加 shape だが --extra-dtypes に絞らず --dtypes の全部で回す
+# *-250x*: 2 の冪でない shape。境界をまたぐ量(出力 / a)がバッチあたり 62500 = 250 × 250 要素(反対側は 16000)で、
+#   2**31 / 2**32 を割り切らないので、要素 2**31 / 2**32 がバッチ・行の途中に来る(制約が平坦 index かバッチ数かを分ける)。
+#   境界の B0 は「またぐ量が 2**k 要素以上になる最小の B」(boundaries)。手順と予測は points_nonpow2.md
 EXTRA_SHAPES = [
     {"id": "all-256x256x256", "M": 256, "K": 256, "N": 256, "cross": "all", "base": False, "all_dtypes": True},
+    {"id": "out-250x64x250", "M": 250, "K": 64, "N": 250, "cross": "out", "base": False},
+    {"id": "in-250x250x64", "M": 250, "K": 250, "N": 64, "cross": "in", "base": False},
 ]
 SHAPE = {s["id"]: s for s in SHAPES + EXTRA_SHAPES}
 ITEMSIZE = {"fp32": 4, "fp16": 2, "bf16": 2}
@@ -217,14 +223,22 @@ def scaled(b: int) -> int:
 
 
 def cal_B(sh_: dict) -> int:
+    """較正・小 shape 点の B: またぐ量が 2**28 要素以下で最大の B(割り切れない shape では 2**28 をわずかに下回る)。"""
     return scaled(CAL_ELEMS // per_batch(sh_))
 
 
+def ceil_div(q: int, p: int) -> int:
+    return -(-q // p)
+
+
 def boundaries(sh_: dict, dtype: str, p: int | None = None) -> list[tuple[str, int]]:
-    """(ラベル, 境界ちょうどの B0)。同じ B0 になる境界は 1 つにまとめる。p = バッチあたり要素数(既定は境界をまたぐ量)。"""
+    """(ラベル, 境界の B0)。B0 = またぐ量が境界(2**31 要素など)以上になる最小の B = ceil(境界 / p)。
+    p が境界を割り切る shape(既存の 2**16 要素 / バッチなど)では要素数がちょうど境界になる B で、v1 と同じ値。
+    割り切れない shape(*-250x*)では B0 - 1 が境界の手前、B0 で境界を越える(要素 境界 は バッチ B0 - 1 の途中)。
+    同じ B0 になる境界は 1 つにまとめる。p = バッチあたり要素数(既定は境界をまたぐ量)。"""
     p = p or per_batch(sh_)
-    raw = [("2^31 elem", scaled(2**31 // p)), ("2^32 elem", scaled(2**32 // p)),
-           ("2^32 byte", scaled(2**32 // (p * ITEMSIZE[dtype])))]
+    raw = [("2^31 elem", scaled(ceil_div(2**31, p))), ("2^32 elem", scaled(ceil_div(2**32, p))),
+           ("2^32 byte", scaled(ceil_div(2**32, p * ITEMSIZE[dtype])))]
     merged: dict[int, list[str]] = defaultdict(list)
     for lab, b0 in raw:
         merged[b0].append(lab)
@@ -278,9 +292,12 @@ def offset_points(sh_: dict, dtype: str, grid: int) -> list[tuple[int, str]]:
 
 
 def far_points(sh_: dict, far: int) -> list[tuple[int, str]]:
-    """--far K: 2**32 要素の B0 の k 倍(k = 2..K)の前後 1 点。"""
-    b0 = scaled(2**32 // per_batch(sh_))
-    return [(b0 * k + d, f"{k}x2^32 elem {d:+d}" if d else f"{k}x2^32 elem") for k in range(2, far + 1) for d in (-1, 0, 1)]
+    """--far K: k × 2**32 要素の境界(k = 2..K)の B0 の前後 1 点。p が 2**32 を割り切る shape では B0 = k × (2**32 / p)(v1 と
+    同じ式)。割り切れない shape では k × floor(2**32 / p) が k × 2**32 の手前にずれるので、B0 = ceil(k × 2**32 / p) を k ごとに取る。"""
+    p = per_batch(sh_)
+    b0 = scaled(2**32 // p)
+    bk = (lambda k: b0 * k) if 2**32 % p == 0 else (lambda k: scaled(ceil_div(k * 2**32, p)))  # noqa: E731
+    return [(bk(k) + d, f"{k}x2^32 elem {d:+d}" if d else f"{k}x2^32 elem") for k in range(2, far + 1) for d in (-1, 0, 1)]
 
 
 def make_spec(shape_id, dtype, layout, kind, B, seed, compare, tol, device, pad_batches=None) -> dict:
@@ -744,7 +761,8 @@ def dtypes_for(s: dict, dtypes: list[str], args) -> list[str]:
 
 def load_points(path: str) -> list[dict]:
     """--points FILE: 指定した点だけを回す(JSON の配列)。各要素は {"shape": id, "dtype", "layout", "B"} が必須で、
-    "kind"(既定 random)、"seed"(0)、"compare"(full)、"pad_batches"(layout = offset のとき必須)を足せる。"""
+    "kind"(既定 random)、"seed"(0)、"compare"(full)、"pad_batches"(layout = offset のとき必須)、"label"(行の probe)を足せる。
+    テスト専用: "test_corrupt"({"batch", "pos"?, "tensor"?}。worker.py が出力を故意に壊す)はそのまま spec に入る(行にも残る)。"""
     pts = json.loads(Path(path).read_text())
     for p in pts:
         assert p["shape"] in SHAPE and p["dtype"] in ITEMSIZE and p["layout"] in LAYOUTS + [OFFSET], p
@@ -856,9 +874,11 @@ def run_points(R: Runner, args) -> None:
     print(f"# tol = {tol}", flush=True)
     for p in pts:
         B = p["B"] if p["layout"] != OFFSET else p.get("B", offset_B(args))
-        R.run(make_spec(p["shape"], p["dtype"], p["layout"], p.get("kind", "random"), B, p.get("seed", 0),
-                        p.get("compare", "full"), tol[p["dtype"]], args.device, pad_batches=p.get("pad_batches")),
-              "point", p.get("label"))
+        spec = make_spec(p["shape"], p["dtype"], p["layout"], p.get("kind", "random"), B, p.get("seed", 0),
+                         p.get("compare", "full"), tol[p["dtype"]], args.device, pad_batches=p.get("pad_batches"))
+        if "test_corrupt" in p:  # テスト専用(ない点の spec は今までと同じ)
+            spec["test_corrupt"] = p["test_corrupt"]
+        R.run(spec, "point", p.get("label"))
 
 
 def sweep(R: Runner, args, dtypes, layouts, shapes, idx_kinds, final_seeds, final_idx_kinds) -> None:
@@ -927,12 +947,20 @@ def dry_run(args, dtypes, layouts, shapes, idx_kinds, final_seeds, final_idx_kin
     t = defaultdict(float)
     n_skip = 0
     if args.points_list is not None:
+        tot, peak = 0.0, 0
         for p in args.points_list:
             sp = make_spec(p["shape"], p["dtype"], p["layout"], p.get("kind", "random"), p.get("B", offset_B(args)),
                            p.get("seed", 0), p.get("compare", "full"), 0, args.device, pad_batches=p.get("pad_batches"))
             over, est = lim.check(sp)
+            tot += 0 if over else time_est(sp)
+            peak = max(peak, 0 if over else est["host"])
             print(f"point {series_id(sp)} B={sp['B']} O={sp.get('pad_batches', '-')} {sp['compare']}: "
                   f"host {est['host']/2**30:.1f} GiB{' -> skipped_memory' if over else ''} 見積もり {time_est(sp):.0f}s")
+        pairs = list(dict.fromkeys((p["shape"], p["dtype"]) for p in args.points_list))
+        t_cal = sum(time_est(make_spec(sid, dt, "contig", "random", cal_B(SHAPE[sid]), 0, "full", 0, args.device))
+                    for sid, dt in pairs) * len(CAL_SEEDS)
+        print(f"# 較正 {len(pairs) * len(CAL_SEEDS)} 実行 見積もり {t_cal:.0f}s、指定点 {len(args.points_list)} 実行 見積もり "
+              f"{tot:.0f}s、計 {(t_cal + tot)/60:.1f} 分。1 実行の host 見積もりの最大 {peak/2**30:.1f} GiB(上限 {lim})")
         return
     with_offset = OFFSET in layouts
     layouts = [x for x in layouts if x != OFFSET]
@@ -1214,6 +1242,35 @@ def write_summary(host_tag: str, run_id: str) -> None:
              sorted([r for r in rows if r["phase"] == "far"], key=skey))
     v2_table("指定点(--points)", "走査ではなく、指定した点を 1 回ずつ実行したもの。",
              [r for r in rows if r["phase"] == "point"])
+
+    # 誤答要素のバッチ内の位置(bad_batch_detail を持つ行だけ。この key より前の worker の行には無い)
+    det = [r for r in rows if r.get("bad_batch_detail")]
+    if det:
+        def pos_str(p, N):
+            return f"{p} ({p // N},{p % N})"
+
+        def det_str(r):
+            out = []
+            W = r["K"] if r.get("worst_tensor") == "grad_a" else r["N"]  # 行の幅(bmm_bwd では最悪の tensor の列数)
+            for d in r["bad_batch_detail"]:
+                rs = ",".join(f"[{a},{b})" for a, b in d["rows"]) + ("…" if d["n_row_ranges"] > len(d["rows"]) else "")
+                out.append(f"{d['batch']}: {d['n_bad']} / 行 {rs} ({d['n_rows']} 行) / "
+                           f"{pos_str(d['pos_min'], W)}〜{pos_str(d['pos_max'], W)}")
+            return "<br>".join(out)
+
+        L += ["## 誤答要素のバッチ内の位置", "",
+              "誤答バッチの先頭側・末尾側それぞれ最大 4 個(比較したバッチの中で)について、バッチ: 誤答要素数 / 誤答要素を含む出力の行の"
+              "区間 [r0, r1) / バッチ内の平坦位置 r·N + c の最小〜最大(括弧は (行, 列))。index 符号化入力は上位の delta(最大 6 個)と、"
+              "逆算した delta の異なる値の数。", "",
+              "| 演算 | shape | dtype | レイアウト | 入力 | B | seed | 比較 | 分類 | 誤答バッチ | 誤答バッチ内の位置 | 上位の delta: 要素数(異なる値の数) |",
+              "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+        for r in sorted(det, key=skey):
+            dl = r.get("idx_delta_top")
+            dls = (", ".join(f"{a}: {b}" for a, b in dl[:6]) + f"({r.get('idx_delta_n_distinct', '-')})") if dl else "-"
+            L.append(f"| {r.get('op', 'bmm')} | {r['shape_id']} | {r['dtype']} | {r['layout']} | {r['kind']} | {r['B']} | "
+                     f"{r['seed']} | {r['compare']} | {cls_short(r)} | {r.get('n_batches_bad')}/{r.get('n_batches_compared')} | "
+                     f"{det_str(r)} | {dls} |")
+        L.append("")
 
     # 時間
     L += ["## 1 実行あたりの時間(秒、平均)", "",

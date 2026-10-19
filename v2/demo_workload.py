@@ -30,7 +30,8 @@ rel > BAD_REL のテキストを「壊れた」とし、その位置(連続区�
 B 件一括と 256 件ずつで計算して比較): S = (q @ kᵀ)·scale、P = softmax(S + mask)、O = P @ v(P は一括の値)、
 O_isolated = P_ref @ v(P を分割実行の値にそろえ、2 つ目の積だけを切り出す)。テキスト×ヘッドごとの rel を記録する。
 
-出力: results/workload/workload.json、workload.md、logits.npz、layer0.npz、fig_rel_by_position.png
+出力: results/workload/workload.json、workload.md、logits.npz、layer0.npz、fig_rel_by_position.png / .pdf
+(図だけを保存済みの結果から描き直すときは plot_workload.py)
 """
 
 from __future__ import annotations
@@ -399,10 +400,11 @@ def main() -> None:
     print(f"done {info['total_wall_s']:.0f}s -> {out}", flush=True)
 
 
-def plot(I: dict, saved: dict, out: Path) -> None:
+def plot(I: dict, saved: dict, out: Path, formats: tuple[str, ...] = ("png", "pdf")) -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    plt.rcParams.update({"pdf.fonttype": 42, "ps.fonttype": 42})  # フォントを TrueType のまま埋め込む(IEEE PDF eXpress)
     ref = saved["mps_eager_c256"]
     rows = []
     for r in I["results"]:
@@ -418,7 +420,7 @@ def plot(I: dict, saved: dict, out: Path) -> None:
     fig, axs = plt.subplots(len(rows), 1, figsize=(9, 1.8 * len(rows)), sharex=True)
     for ax, (t, rel) in zip(np.atleast_1d(axs), rows):
         y = np.where(np.isfinite(rel), np.maximum(rel, 1e-9), 1e3)
-        ax.scatter(np.arange(len(y)), y, s=1, rasterized=True)
+        ax.scatter(np.arange(len(y)), y, s=1)  # PDF でも点はベクタのまま(rasterized にすると savefig の dpi の画像になる)
         ax.set_yscale("log")
         ax.axhline(BAD_REL, ls="--", lw=0.7, c="gray")
         ax.axvline(I["boundary_text"], ls=":", lw=0.7, c="red")
@@ -426,7 +428,8 @@ def plot(I: dict, saved: dict, out: Path) -> None:
         ax.set_ylabel("rel. err.")
     np.atleast_1d(axs)[-1].set_xlabel("position in batch")
     fig.tight_layout()
-    fig.savefig(out / "fig_rel_by_position.png", dpi=150)
+    for ext in formats:
+        fig.savefig(out / f"fig_rel_by_position.{ext}", dpi=150)
 
 
 def render_md(I: dict) -> str:

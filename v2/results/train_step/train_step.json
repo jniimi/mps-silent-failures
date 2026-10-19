@@ -1,0 +1,1971 @@
+{
+ "env": {
+  "macos": "27.0",
+  "macos_build": "26A428",
+  "hw_model": "Mac14,14",
+  "chip": "Apple M2 Ultra",
+  "mem_bytes": 206158430208,
+  "python": "3.12.12",
+  "torch": "2.14.0",
+  "transformers": "5.17.0",
+  "datasets": "5.0.1",
+  "git_rev": "d735d40441334e96d454611f8133dca2096c31eb"
+ },
+ "device": "mps",
+ "tiny": false,
+ "args": {
+  "batch_sizes": [
+   682,
+   683,
+   1365,
+   1366,
+   2048
+  ],
+  "impls": [
+   "eager",
+   "sdpa"
+  ],
+  "max_length": 512,
+  "chunk": 256,
+  "chunk2": 128,
+  "cpu_check_n": 256,
+  "seed": 0,
+  "device": "mps",
+  "no_checkpointing": false,
+  "no_anomaly": false,
+  "timeout_min": 180,
+  "keep_work": false,
+  "out": "/Users/USER/Documents/GitHub/mps-boundary/v2/results/train_step",
+  "tiny": false,
+  "debug_raise_backward": [],
+  "debug_crash": []
+ },
+ "model": "cardiffnlp/twitter-roberta-base-sentiment-latest",
+ "model_rev": "3216a57f2a0d9c45a2e6c20157c20c49fb4bf9c7",
+ "tokenizer": "cardiffnlp/twitter-roberta-base-sentiment-latest",
+ "tokenizer_rev": "3216a57f2a0d9c45a2e6c20157c20c49fb4bf9c7",
+ "dataset": "cardiffnlp/tweet_eval",
+ "dataset_config": "sentiment",
+ "split": "test",
+ "split_size": 12284,
+ "dataset_rev": "b3a375baf0f409c77e6bc7aa35102b7b3534f8be",
+ "text_order": "dataset order, first N",
+ "tokenization": "padding=max_length, truncation=True",
+ "n_truncated": 0,
+ "id2label": {
+  "0": "negative",
+  "1": "neutral",
+  "2": "positive"
+ },
+ "data": "`cardiffnlp/tweet_eval` / `sentiment` / `test`(12284 件、revision `b3a375baf0f409c77e6bc7aa35102b7b3534f8be`)の先頭 2048 件(データセットの順)。padding=max_length, truncation=True, max_length=512(切り詰め 0 件)",
+ "mean_real_tokens": 25.57666015625,
+ "label_counts": [
+  631,
+  1024,
+  393
+ ],
+ "n_texts": 2048,
+ "max_length": 512,
+ "num_heads": 12,
+ "num_layers": 12,
+ "ffn_size": 3072,
+ "dtype": "fp32",
+ "seed": 0,
+ "chunk": 256,
+ "chunk2": 128,
+ "bounds": [
+  256,
+  682,
+  683,
+  1365,
+  1366,
+  2048
+ ],
+ "bad_rel_threshold": 0.001,
+ "train_step": "loss = cross_entropy(logits, dataset labels, reduction='sum'); all params requires_grad; no optimizer step; model.train() with every nn.Dropout p=0 and config dropouts 0",
+ "checkpointing": "transformers gradient_checkpointing_enable(use_reentrant=False)",
+ "anomaly": "forward+backward under set_detect_anomaly(True, check_nan=False)",
+ "tolerance": "grad wrong if global rel L2 > tau = max(10 * noise, 1e-06); tensor wrong if rel L2 > max(10 * noise_t, 1e-05), except attention key biases (gradient exactly 0 in exact arithmetic, softmax shift invariance): wrong if abs L2 error > tau * ||g_ref|| (global); noise = ref c128 vs ref c256",
+ "reference": "same impl and device, chunks <= 256 (every B a chunk boundary), grads accumulated in float64 on CPU, snapshot at each B",
+ "hypotheses": {
+  "assumptions": "predictions from the bmm rules found on PyTorch 2.14.0; they assume PyTorch's bmm backward formulas grad_self = grad @ mat2^T, grad_mat2 = self^T @ grad (transposed views) and that matmul's batch folding copies Q/K/V into contiguous 3-D tensors",
+  "eager_below_2p31": "B*H*L^2 < 2^31 (B <= 682): forward and gradients correct",
+  "eager_2p31_to_2p32": "2^31 <= B*H*L^2 <= 2^32 (683 <= B <= 1365): forward correct; backward raises (rule 2 on P^T, a view with >= 2^31 elements, in the gradient of V for softmax(S)V)",
+  "eager_above_2p32": "B*H*L^2 > 2^32 (B >= 1366): forward wrong for texts from 1365 (head 4) on (rule 3 on P); backward raises (rule 2); grad_P = dO V^T would fall under rule 1 if reached",
+  "eager_ffn": "FFN intermediate (B*L, 3072) >= 2^31 from B = 1366: the FFN's 2-D matmuls (not covered by the bmm rules) have views >= 2^31 in backward and may raise or abort first; autograd reaches layer 11's FFN before its attention, so the anomaly trace is needed to tell which op failed",
+  "sdpa": "unknown (inference: dispatched to aten::_scaled_dot_product_attention_math_for_mps, forward correct). On torch 2.12.1 (MBP), with grad enabled and inputs requiring grad, MPS SDPA decomposed into aten.bmm x2 + aten._safe_softmax per layer instead; see refs.*.dispatch for the version actually run",
+  "b_scores_ge_2p31": 683,
+  "b_scores_gt_2p32": 1366,
+  "b_ffn_ge_2p31": 1366,
+  "boundary_text": 1365,
+  "boundary_head": 4
+ },
+ "element_counts": {
+  "256": {
+   "scores_elems": 805306368,
+   "scores_over_2p31": 0.375,
+   "scores_over_2p32": 0.1875,
+   "ffn_elems": 402653184,
+   "ffn_over_2p31": 0.1875,
+   "ffn_over_2p32": 0.09375
+  },
+  "682": {
+   "scores_elems": 2145386496,
+   "scores_over_2p31": 0.9990234375,
+   "scores_over_2p32": 0.49951171875,
+   "ffn_elems": 1072693248,
+   "ffn_over_2p31": 0.49951171875,
+   "ffn_over_2p32": 0.249755859375
+  },
+  "683": {
+   "scores_elems": 2148532224,
+   "scores_over_2p31": 1.00048828125,
+   "scores_over_2p32": 0.500244140625,
+   "ffn_elems": 1074266112,
+   "ffn_over_2p31": 0.500244140625,
+   "ffn_over_2p32": 0.2501220703125
+  },
+  "1365": {
+   "scores_elems": 4293918720,
+   "scores_over_2p31": 1.99951171875,
+   "scores_over_2p32": 0.999755859375,
+   "ffn_elems": 2146959360,
+   "ffn_over_2p31": 0.999755859375,
+   "ffn_over_2p32": 0.4998779296875
+  },
+  "1366": {
+   "scores_elems": 4297064448,
+   "scores_over_2p31": 2.0009765625,
+   "scores_over_2p32": 1.00048828125,
+   "ffn_elems": 2148532224,
+   "ffn_over_2p31": 1.00048828125,
+   "ffn_over_2p32": 0.500244140625
+  },
+  "2048": {
+   "scores_elems": 6442450944,
+   "scores_over_2p31": 3.0,
+   "scores_over_2p32": 1.5,
+   "ffn_elems": 3221225472,
+   "ffn_over_2p31": 1.5,
+   "ffn_over_2p32": 0.75
+  }
+ },
+ "mps_high_watermark_ratio": null,
+ "mps_low_watermark_ratio": null,
+ "refs": {
+  "eager_c256": {
+   "status": "ok",
+   "impl": "eager",
+   "chunk": 256,
+   "bounds": [
+    256,
+    682,
+    683,
+    1365,
+    1366,
+    2048
+   ],
+   "pieces": 11,
+   "wall_s": 138.8694513749797,
+   "loss_sum": 1282.2148659182712,
+   "acc": 0.712890625,
+   "nonfinite_logits": 0,
+   "model": {
+    "attn_implementation": "eager",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "self_check": {
+    "n": 2,
+    "train_eq_eval_bitwise": true,
+    "train_vs_eval_max_abs": 0.0,
+    "ckpt_toggle_logits_bitwise": true,
+    "ckpt_toggle_grad_rel_l2": 4.469598356883407e-09,
+    "ckpt_toggle_grad_differing_tensors": [
+     "roberta.embeddings.token_type_embeddings.weight"
+    ]
+   },
+   "dispatch": {
+    "forward": {
+     "aten.linear.default": 74,
+     "aten.bmm.default": 24,
+     "aten._softmax.default": 12
+    },
+    "backward": {
+     "aten._log_softmax.default": 1,
+     "aten._log_softmax_backward_data.default": 1,
+     "aten.linear_backward.default": 74,
+     "aten.linear.default": 72,
+     "aten.bmm.default": 72,
+     "aten._softmax.default": 12,
+     "aten._softmax_backward_data.default": 12
+    }
+   },
+   "mem_end": {
+    "current": 1018948608,
+    "driver": 36431216640
+   },
+   "recommended_max_memory": 173173080064,
+   "child_exit_code": 0,
+   "child_wall_s": 144.44529804200283
+  },
+  "eager_c128": {
+   "status": "ok",
+   "impl": "eager",
+   "chunk": 128,
+   "bounds": [
+    256,
+    682,
+    683,
+    1365,
+    1366,
+    2048
+   ],
+   "pieces": 20,
+   "wall_s": 132.55473437500768,
+   "loss_sum": 1282.2148659182712,
+   "acc": 0.712890625,
+   "nonfinite_logits": 0,
+   "model": {
+    "attn_implementation": "eager",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "self_check": {
+    "n": 2,
+    "train_eq_eval_bitwise": true,
+    "train_vs_eval_max_abs": 0.0,
+    "ckpt_toggle_logits_bitwise": true,
+    "ckpt_toggle_grad_rel_l2": 4.223721808690329e-09,
+    "ckpt_toggle_grad_differing_tensors": [
+     "roberta.embeddings.token_type_embeddings.weight"
+    ]
+   },
+   "dispatch": {
+    "forward": {
+     "aten.linear.default": 74,
+     "aten.bmm.default": 24,
+     "aten._softmax.default": 12
+    },
+    "backward": {
+     "aten._log_softmax.default": 1,
+     "aten._log_softmax_backward_data.default": 1,
+     "aten.linear_backward.default": 74,
+     "aten.linear.default": 72,
+     "aten.bmm.default": 72,
+     "aten._softmax.default": 12,
+     "aten._softmax_backward_data.default": 12
+    }
+   },
+   "mem_end": {
+    "current": 1014492160,
+    "driver": 17556848640
+   },
+   "recommended_max_memory": 173173080064,
+   "child_exit_code": 0,
+   "child_wall_s": 136.08441954199225
+  },
+  "sdpa_c256": {
+   "status": "ok",
+   "impl": "sdpa",
+   "chunk": 256,
+   "bounds": [
+    256,
+    682,
+    683,
+    1365,
+    1366,
+    2048
+   ],
+   "pieces": 11,
+   "wall_s": 191.62161025000387,
+   "loss_sum": 1282.2148418435827,
+   "acc": 0.712890625,
+   "nonfinite_logits": 0,
+   "model": {
+    "attn_implementation": "sdpa",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "self_check": {
+    "n": 2,
+    "train_eq_eval_bitwise": true,
+    "train_vs_eval_max_abs": 0.0,
+    "ckpt_toggle_logits_bitwise": true,
+    "ckpt_toggle_grad_rel_l2": 4.14892657038213e-09,
+    "ckpt_toggle_grad_differing_tensors": [
+     "roberta.embeddings.token_type_embeddings.weight"
+    ]
+   },
+   "dispatch": {
+    "forward": {
+     "aten.linear.default": 74,
+     "aten.bmm.default": 24,
+     "aten._safe_softmax.default": 12
+    },
+    "backward": {
+     "aten._log_softmax.default": 1,
+     "aten._log_softmax_backward_data.default": 1,
+     "aten.linear_backward.default": 74,
+     "aten.linear.default": 72,
+     "aten.bmm.default": 72,
+     "aten._safe_softmax.default": 12,
+     "aten._softmax_backward_data.default": 12
+    }
+   },
+   "mem_end": {
+    "current": 1022880768,
+    "driver": 37236523008
+   },
+   "recommended_max_memory": 173173080064,
+   "child_exit_code": 0,
+   "child_wall_s": 195.24458412500098
+  },
+  "sdpa_c128": {
+   "status": "ok",
+   "impl": "sdpa",
+   "chunk": 128,
+   "bounds": [
+    256,
+    682,
+    683,
+    1365,
+    1366,
+    2048
+   ],
+   "pieces": 20,
+   "wall_s": 184.71779120899737,
+   "loss_sum": 1282.2148418435827,
+   "acc": 0.712890625,
+   "nonfinite_logits": 0,
+   "model": {
+    "attn_implementation": "sdpa",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "self_check": {
+    "n": 2,
+    "train_eq_eval_bitwise": true,
+    "train_vs_eval_max_abs": 0.0,
+    "ckpt_toggle_logits_bitwise": true,
+    "ckpt_toggle_grad_rel_l2": 4.4636828195770235e-09,
+    "ckpt_toggle_grad_differing_tensors": [
+     "roberta.embeddings.token_type_embeddings.weight"
+    ]
+   },
+   "dispatch": {
+    "forward": {
+     "aten.linear.default": 74,
+     "aten.bmm.default": 24,
+     "aten._safe_softmax.default": 12
+    },
+    "backward": {
+     "aten._log_softmax.default": 1,
+     "aten._log_softmax_backward_data.default": 1,
+     "aten.linear_backward.default": 74,
+     "aten.linear.default": 72,
+     "aten.bmm.default": 72,
+     "aten._safe_softmax.default": 12,
+     "aten._softmax_backward_data.default": 12
+    }
+   },
+   "mem_end": {
+    "current": 1003744256,
+    "driver": 18093719552
+   },
+   "recommended_max_memory": 173173080064,
+   "child_exit_code": 0,
+   "child_wall_s": 188.25673679099418
+  }
+ },
+ "ref_noise": {
+  "eager_c128_vs_c256": {
+   "logits_max_rel": 0.0,
+   "loss_sum_rel_diff": 0.0
+  },
+  "sdpa_c128_vs_c256": {
+   "logits_max_rel": 0.0,
+   "loss_sum_rel_diff": 0.0
+  },
+  "sdpa_vs_eager_c256": {
+   "logits_max_rel": 3.250614985396999e-05
+  }
+ },
+ "cpu_check": {
+  "status": "ok",
+  "n": 256,
+  "wall_s": 55.1150060420041,
+  "threads": 16,
+  "model": {
+   "attn_implementation": "eager",
+   "dropout_modules_set_to_0": 38,
+   "config_dropouts": {
+    "hidden_dropout_prob": 0.0,
+    "attention_probs_dropout_prob": 0.0,
+    "classifier_dropout": 0.0
+   },
+   "training": true,
+   "checkpointed_layers": 12,
+   "n_params": 124647939
+  },
+  "loss_sum": 156.0282729147002,
+  "refs_vs_cpu": {
+   "eager_c256": {
+    "n": 256,
+    "logits_max_rel": 8.472378352096495e-06,
+    "logits_median_rel": 9.529061481058341e-07,
+    "pred_changed": 0,
+    "grad_rel_l2": 6.7235315757897125e-06,
+    "grad_cos": 0.9999999999775293
+   },
+   "eager_c128": {
+    "n": 256,
+    "logits_max_rel": 8.472378352096495e-06,
+    "logits_median_rel": 9.529061481058341e-07,
+    "pred_changed": 0,
+    "grad_rel_l2": 6.812820774101256e-06,
+    "grad_cos": 0.999999999976919
+   }
+  },
+  "child_exit_code": 0,
+  "child_wall_s": 58.30890204201569
+ },
+ "total_wall_s": 999.6247522920021,
+ "work_bytes": 12483826253,
+ "work_kept": null,
+ "results": [
+  {
+   "impl": "eager",
+   "B": 256,
+   "control": true,
+   "scores_elems": 805306368,
+   "scores_over_2p31": 0.375,
+   "scores_over_2p32": 0.1875,
+   "ffn_elems": 402653184,
+   "ffn_over_2p31": 0.1875,
+   "ffn_over_2p32": 0.09375,
+   "predicted": {
+    "forward": "correct",
+    "status": "ok",
+    "text": "fwd correct, grads correct"
+   },
+   "status": "ok",
+   "model": {
+    "attn_implementation": "eager",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "mem": {
+    "after_load": {
+     "current": 499402496,
+     "driver": 1082540032
+    },
+    "after_forward": {
+     "current": 6409971968,
+     "driver": 20571635712
+    },
+    "after_backward": {
+     "current": 998801664,
+     "driver": 28633202688
+    },
+    "after_free": {
+     "current": 2048,
+     "driver": 564789248
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "loss_sum_device": 156.02825927734375,
+   "forward_s": 2.2871896249998827,
+   "backward_s": 14.987229833001038,
+   "anomaly": null,
+   "other_warnings": [],
+   "forward": {
+    "n": 256,
+    "max_rel": 0.0,
+    "max_rel_finite": 0.0,
+    "median_rel": 0.0,
+    "max_rel_ok_texts": 0.0,
+    "median_rel_bad_texts": null,
+    "nonfinite_texts": 0,
+    "bad_texts": 0,
+    "bad_frac": 0.0,
+    "bad_runs_text_index": [],
+    "bad_runs_batch_pos": [],
+    "pred_changed": 0,
+    "pred_changed_frac": 0.0,
+    "pred_changed_runs_batch_pos": [],
+    "pred_changed_frac_among_bad": null,
+    "acc": 0.7109375,
+    "acc_ref": 0.7109375,
+    "loss_sum": 156.02825943101197,
+    "loss_sum_ref": 156.02825943101197,
+    "loss_rel_diff": 0.0,
+    "nonfinite_logits": 0,
+    "class": "correct"
+   },
+   "grad": {
+    "rel_l2": 3.310181015058304e-08,
+    "cos": 0.9999999999999993,
+    "nonfinite": 0,
+    "norm": 1290.9401274159452,
+    "ref_norm": 1290.9401272456955,
+    "noise_rel_l2": 1.4747074404735367e-06,
+    "tau": 1.4747074404735367e-05,
+    "class": "correct",
+    "n_tensors": 201,
+    "n_wrong_tensors": 0,
+    "wrong_tensors": [],
+    "worst_group": "embeddings",
+    "groups": {
+     "embeddings": {
+      "rel_l2": 2.8647170372275684e-07,
+      "noise_rel_l2": 1.061552071796151e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 3.914808119524401e-07,
+      "wrong_tensors": 0
+     },
+     "layer0": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.174413171908625e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "layer1": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.3078317633486889e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "layer2": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.3111409095660163e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "layer3": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.3107509882882374e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "layer4": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.3299379131111167e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "layer5": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.4656742168076218e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "layer6": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.6393100574132152e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "layer7": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.7407867698852567e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "layer8": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.853003625629391e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "layer9": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.532577854203058e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "layer10": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.6179799318603502e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "layer11": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 1.1743822585412682e-06,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     },
+     "classifier": {
+      "rel_l2": 0.0,
+      "noise_rel_l2": 2.580264523924954e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 0.0,
+      "wrong_tensors": 0
+     }
+    }
+   },
+   "vs_cpu": {
+    "n": 256,
+    "logits_max_rel": 8.472378352096495e-06,
+    "logits_median_rel": 9.529061481058341e-07,
+    "pred_changed": 0,
+    "grad_rel_l2": 6.7237422506924065e-06,
+    "grad_cos": 0.9999999999775279
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 20.911249875003705
+  },
+  {
+   "impl": "eager",
+   "B": 682,
+   "control": false,
+   "scores_elems": 2145386496,
+   "scores_over_2p31": 0.9990234375,
+   "scores_over_2p32": 0.49951171875,
+   "ffn_elems": 1072693248,
+   "ffn_over_2p31": 0.49951171875,
+   "ffn_over_2p32": 0.249755859375,
+   "predicted": {
+    "forward": "correct",
+    "status": "ok",
+    "text": "fwd correct, grads correct"
+   },
+   "status": "ok",
+   "model": {
+    "attn_implementation": "eager",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "mem": {
+    "after_load": {
+     "current": 499402496,
+     "driver": 1082540032
+    },
+    "after_forward": {
+     "current": 16266600192,
+     "driver": 47406792704
+    },
+    "after_backward": {
+     "current": 1000219392,
+     "driver": 69974687744
+    },
+    "after_free": {
+     "current": 5632,
+     "driver": 1235877888
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "loss_sum_device": 429.855224609375,
+   "forward_s": 5.924426166020567,
+   "backward_s": 41.1807233330037,
+   "anomaly": null,
+   "other_warnings": [],
+   "forward": {
+    "n": 682,
+    "max_rel": 0.0,
+    "max_rel_finite": 0.0,
+    "median_rel": 0.0,
+    "max_rel_ok_texts": 0.0,
+    "median_rel_bad_texts": null,
+    "nonfinite_texts": 0,
+    "bad_texts": 0,
+    "bad_frac": 0.0,
+    "bad_runs_text_index": [],
+    "bad_runs_batch_pos": [],
+    "pred_changed": 0,
+    "pred_changed_frac": 0.0,
+    "pred_changed_runs_batch_pos": [],
+    "pred_changed_frac_among_bad": null,
+    "acc": 0.6979472140762464,
+    "acc_ref": 0.6979472140762464,
+    "loss_sum": 429.85523547045887,
+    "loss_sum_ref": 429.85523547045887,
+    "loss_rel_diff": 0.0,
+    "nonfinite_logits": 0,
+    "class": "correct"
+   },
+   "grad": {
+    "rel_l2": 1.796474100991939e-06,
+    "cos": 0.9999999999983865,
+    "nonfinite": 0,
+    "norm": 3929.2713210879488,
+    "ref_norm": 3929.271219219213,
+    "noise_rel_l2": 7.4407860685274e-07,
+    "tau": 7.440786068527401e-06,
+    "class": "correct",
+    "n_tensors": 201,
+    "n_wrong_tensors": 0,
+    "wrong_tensors": [],
+    "worst_group": "layer0",
+    "groups": {
+     "embeddings": {
+      "rel_l2": 1.7524612336459463e-06,
+      "noise_rel_l2": 7.690935383826203e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.14041201775488e-06,
+      "wrong_tensors": 0
+     },
+     "layer0": {
+      "rel_l2": 2.119234308999482e-06,
+      "noise_rel_l2": 9.811895955949545e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.3675527322795053e-06,
+      "wrong_tensors": 0
+     },
+     "layer1": {
+      "rel_l2": 2.0445129545425727e-06,
+      "noise_rel_l2": 9.859797641306701e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.4710719561609683e-06,
+      "wrong_tensors": 0
+     },
+     "layer2": {
+      "rel_l2": 2.0268430536136733e-06,
+      "noise_rel_l2": 9.185818634925286e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.3835863366063404e-06,
+      "wrong_tensors": 0
+     },
+     "layer3": {
+      "rel_l2": 1.993129452165154e-06,
+      "noise_rel_l2": 8.472429850884596e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.2454065055816888e-06,
+      "wrong_tensors": 0
+     },
+     "layer4": {
+      "rel_l2": 1.8608469527366337e-06,
+      "noise_rel_l2": 8.089263457976532e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.450758376230868e-06,
+      "wrong_tensors": 0
+     },
+     "layer5": {
+      "rel_l2": 1.8464247423750145e-06,
+      "noise_rel_l2": 7.861845242046131e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.274387776400623e-06,
+      "wrong_tensors": 0
+     },
+     "layer6": {
+      "rel_l2": 1.8758297461456327e-06,
+      "noise_rel_l2": 7.444042670864482e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 1.953660900547319e-06,
+      "wrong_tensors": 0
+     },
+     "layer7": {
+      "rel_l2": 1.7138170246202563e-06,
+      "noise_rel_l2": 6.691818779973656e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.05687773605754e-06,
+      "wrong_tensors": 0
+     },
+     "layer8": {
+      "rel_l2": 1.9136534697037222e-06,
+      "noise_rel_l2": 8.014359052902333e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 1.9516051492444715e-06,
+      "wrong_tensors": 0
+     },
+     "layer9": {
+      "rel_l2": 1.7855393309474663e-06,
+      "noise_rel_l2": 7.256155109814458e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.051613628758122e-06,
+      "wrong_tensors": 0
+     },
+     "layer10": {
+      "rel_l2": 1.8936867774474015e-06,
+      "noise_rel_l2": 7.412764592405454e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.044472757952145e-06,
+      "wrong_tensors": 0
+     },
+     "layer11": {
+      "rel_l2": 1.293859605651582e-06,
+      "noise_rel_l2": 5.15060460371321e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.02262832668163e-06,
+      "wrong_tensors": 0
+     },
+     "classifier": {
+      "rel_l2": 2.6506580191599757e-07,
+      "noise_rel_l2": 1.1104082965382886e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 3.731484871520255e-07,
+      "wrong_tensors": 0
+     }
+    }
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 50.746840500010876
+  },
+  {
+   "impl": "eager",
+   "B": 683,
+   "control": false,
+   "scores_elems": 2148532224,
+   "scores_over_2p31": 1.00048828125,
+   "scores_over_2p32": 0.500244140625,
+   "ffn_elems": 1074266112,
+   "ffn_over_2p31": 0.500244140625,
+   "ffn_over_2p32": 0.2501220703125,
+   "predicted": {
+    "forward": "correct",
+    "status": "raised_backward",
+    "text": "fwd correct, bwd raises (rule 2)"
+   },
+   "status": "raised_backward",
+   "model": {
+    "attn_implementation": "eager",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "mem": {
+    "after_load": {
+     "current": 499402496,
+     "driver": 1082540032
+    },
+    "after_forward": {
+     "current": 16736428288,
+     "driver": 48849633280
+    },
+    "after_backward": {
+     "current": 26724018176,
+     "driver": 63119654912
+    },
+    "after_free": {
+     "current": 5632,
+     "driver": 1237975040
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "loss_sum_device": 429.8758239746094,
+   "forward_s": 5.960393291985383,
+   "backward_s_until_error": 0.156192166992696,
+   "exception_type": "RuntimeError",
+   "exception_msg": "MPSGraph does not support tensor dims larger than INT_MAX",
+   "oom": false,
+   "anomaly": {
+    "backward_node": "BmmBackward0",
+    "forward_location": "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)",
+    "model_location": "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)",
+    "forward_frames": [
+     "output_capturing.py:286 in wrapper: outputs = func(self, *args, **kwargs)",
+     "modeling_roberta.py:626 in forward: encoder_outputs = self.encoder(",
+     "modeling_roberta.py:509 in forward: hidden_states = layer_module(",
+     "modeling_layers.py:108 in __call__: return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)",
+     "modeling_roberta.py:430 in forward: self_attention_output, _ = self.attention(",
+     "modeling_roberta.py:361 in forward: attention_output, attn_weights = self.self(",
+     "modeling_roberta.py:239 in forward: attn_output, attn_weights = attention_interface(",
+     "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)"
+    ],
+    "n_messages": 1,
+    "text": "Error detected in BmmBackward0. Traceback of forward call that caused the error:\n  ...\n    return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_compile.py\", line 54, in inner\n    return disable_fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py\", line 1548, in _fn\n    return fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 606, in checkpoint\n    return _checkpoint_impl(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 678, in _checkpoint_impl\n    ret = function(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 430, in forward\n    self_attention_output, _ = self.attention(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 361, in forward\n    attention_output, attn_weights = self.self(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 239, in forward\n    attn_output, attn_weights = attention_interface(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 180, in eager_attention_forward\n    attn_output = torch.matmul(attn_weights, value)\n (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/python_anomaly_mode.cpp:135.)"
+   },
+   "other_warnings": [],
+   "forward": {
+    "n": 683,
+    "max_rel": 7.291644715777887e-08,
+    "max_rel_finite": 7.291644715777887e-08,
+    "median_rel": 0.0,
+    "max_rel_ok_texts": 7.291644715777887e-08,
+    "median_rel_bad_texts": null,
+    "nonfinite_texts": 0,
+    "bad_texts": 0,
+    "bad_frac": 0.0,
+    "bad_runs_text_index": [],
+    "bad_runs_batch_pos": [],
+    "pred_changed": 0,
+    "pred_changed_frac": 0.0,
+    "pred_changed_runs_batch_pos": [],
+    "pred_changed_frac_among_bad": null,
+    "acc": 0.698389458272328,
+    "acc_ref": 0.698389458272328,
+    "loss_sum": 429.87583062425256,
+    "loss_sum_ref": 429.87583062425256,
+    "loss_rel_diff": 0.0,
+    "nonfinite_logits": 0,
+    "class": "correct"
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 11.330019790999359
+  },
+  {
+   "impl": "eager",
+   "B": 1365,
+   "control": false,
+   "scores_elems": 4293918720,
+   "scores_over_2p31": 1.99951171875,
+   "scores_over_2p32": 0.999755859375,
+   "ffn_elems": 2146959360,
+   "ffn_over_2p31": 0.999755859375,
+   "ffn_over_2p32": 0.4998779296875,
+   "predicted": {
+    "forward": "correct",
+    "status": "raised_backward",
+    "text": "fwd correct, bwd raises (rule 2)"
+   },
+   "status": "raised_backward",
+   "model": {
+    "attn_implementation": "eager",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "mem": {
+    "after_load": {
+     "current": 499402496,
+     "driver": 1082540032
+    },
+    "after_forward": {
+     "current": 32033797120,
+     "driver": 93577691136
+    },
+    "after_backward": {
+     "current": 51381492736,
+     "driver": 121504727040
+    },
+    "after_free": {
+     "current": 11008,
+     "driver": 2309619712
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "loss_sum_device": 854.2928466796875,
+   "forward_s": 11.728270583000267,
+   "backward_s_until_error": 0.36170145799405873,
+   "exception_type": "RuntimeError",
+   "exception_msg": "MPSGraph does not support tensor dims larger than INT_MAX",
+   "oom": false,
+   "anomaly": {
+    "backward_node": "BmmBackward0",
+    "forward_location": "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)",
+    "model_location": "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)",
+    "forward_frames": [
+     "output_capturing.py:286 in wrapper: outputs = func(self, *args, **kwargs)",
+     "modeling_roberta.py:626 in forward: encoder_outputs = self.encoder(",
+     "modeling_roberta.py:509 in forward: hidden_states = layer_module(",
+     "modeling_layers.py:108 in __call__: return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)",
+     "modeling_roberta.py:430 in forward: self_attention_output, _ = self.attention(",
+     "modeling_roberta.py:361 in forward: attention_output, attn_weights = self.self(",
+     "modeling_roberta.py:239 in forward: attn_output, attn_weights = attention_interface(",
+     "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)"
+    ],
+    "n_messages": 1,
+    "text": "Error detected in BmmBackward0. Traceback of forward call that caused the error:\n  ...\n    return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_compile.py\", line 54, in inner\n    return disable_fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py\", line 1548, in _fn\n    return fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 606, in checkpoint\n    return _checkpoint_impl(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 678, in _checkpoint_impl\n    ret = function(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 430, in forward\n    self_attention_output, _ = self.attention(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 361, in forward\n    attention_output, attn_weights = self.self(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 239, in forward\n    attn_output, attn_weights = attention_interface(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 180, in eager_attention_forward\n    attn_output = torch.matmul(attn_weights, value)\n (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/python_anomaly_mode.cpp:135.)"
+   },
+   "other_warnings": [],
+   "forward": {
+    "n": 1365,
+    "max_rel": 7.291644715777887e-08,
+    "max_rel_finite": 7.291644715777887e-08,
+    "median_rel": 0.0,
+    "max_rel_ok_texts": 7.291644715777887e-08,
+    "median_rel_bad_texts": null,
+    "nonfinite_texts": 0,
+    "bad_texts": 0,
+    "bad_frac": 0.0,
+    "bad_runs_text_index": [],
+    "bad_runs_batch_pos": [],
+    "pred_changed": 0,
+    "pred_changed_frac": 0.0,
+    "pred_changed_runs_batch_pos": [],
+    "pred_changed_frac_among_bad": null,
+    "acc": 0.7076923076923077,
+    "acc_ref": 0.7076923076923077,
+    "loss_sum": 854.2929046647623,
+    "loss_sum_ref": 854.2929046647623,
+    "loss_rel_diff": 0.0,
+    "nonfinite_logits": 0,
+    "class": "correct"
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 19.120262791024288
+  },
+  {
+   "impl": "eager",
+   "B": 1366,
+   "control": false,
+   "scores_elems": 4297064448,
+   "scores_over_2p31": 2.0009765625,
+   "scores_over_2p32": 1.00048828125,
+   "ffn_elems": 2148532224,
+   "ffn_over_2p31": 1.00048828125,
+   "ffn_over_2p32": 0.500244140625,
+   "predicted": {
+    "forward": "wrong",
+    "status": "raised_backward",
+    "text": "fwd wrong from text 1365 (rule 3), bwd raises (rule 2); FFN bwd may raise/abort first"
+   },
+   "status": "raised_backward",
+   "model": {
+    "attn_implementation": "eager",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "mem": {
+    "after_load": {
+     "current": 499402496,
+     "driver": 1082540032
+    },
+    "after_forward": {
+     "current": 32973452800,
+     "driver": 96463372288
+    },
+    "after_backward": {
+     "current": 52924996864,
+     "driver": 122851622912
+    },
+    "after_free": {
+     "current": 11008,
+     "driver": 162136064
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "loss_sum_device": 855.4853515625,
+   "forward_s": 12.142950000008568,
+   "backward_s_until_error": 0.2487037910032086,
+   "exception_type": "RuntimeError",
+   "exception_msg": "MPSGraph does not support tensor dims larger than INT_MAX",
+   "oom": false,
+   "anomaly": {
+    "backward_node": "BmmBackward0",
+    "forward_location": "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)",
+    "model_location": "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)",
+    "forward_frames": [
+     "output_capturing.py:286 in wrapper: outputs = func(self, *args, **kwargs)",
+     "modeling_roberta.py:626 in forward: encoder_outputs = self.encoder(",
+     "modeling_roberta.py:509 in forward: hidden_states = layer_module(",
+     "modeling_layers.py:108 in __call__: return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)",
+     "modeling_roberta.py:430 in forward: self_attention_output, _ = self.attention(",
+     "modeling_roberta.py:361 in forward: attention_output, attn_weights = self.self(",
+     "modeling_roberta.py:239 in forward: attn_output, attn_weights = attention_interface(",
+     "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)"
+    ],
+    "n_messages": 1,
+    "text": "Error detected in BmmBackward0. Traceback of forward call that caused the error:\n  ...\n    return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_compile.py\", line 54, in inner\n    return disable_fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py\", line 1548, in _fn\n    return fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 606, in checkpoint\n    return _checkpoint_impl(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 678, in _checkpoint_impl\n    ret = function(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 430, in forward\n    self_attention_output, _ = self.attention(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 361, in forward\n    attention_output, attn_weights = self.self(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 239, in forward\n    attn_output, attn_weights = attention_interface(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 180, in eager_attention_forward\n    attn_output = torch.matmul(attn_weights, value)\n (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/python_anomaly_mode.cpp:135.)"
+   },
+   "other_warnings": [],
+   "forward": {
+    "n": 1366,
+    "max_rel": 0.7806107996494915,
+    "max_rel_finite": 0.7806107996494915,
+    "median_rel": 0.0,
+    "max_rel_ok_texts": 7.291644715777887e-08,
+    "median_rel_bad_texts": 0.7806107996494915,
+    "nonfinite_texts": 0,
+    "bad_texts": 1,
+    "bad_frac": 0.0007320644216691069,
+    "bad_runs_text_index": [
+     [
+      1365,
+      1365
+     ]
+    ],
+    "bad_runs_batch_pos": [
+     [
+      1365,
+      1365
+     ]
+    ],
+    "pred_changed": 1,
+    "pred_changed_frac": 0.0007320644216691069,
+    "pred_changed_runs_batch_pos": [
+     [
+      1365,
+      1365
+     ]
+    ],
+    "pred_changed_frac_among_bad": 1.0,
+    "acc": 0.7071742313323572,
+    "acc_ref": 0.7079062957540263,
+    "loss_sum": 855.485400964506,
+    "loss_sum_ref": 854.4129616366699,
+    "loss_rel_diff": 0.00125517680090167,
+    "nonfinite_logits": 0,
+    "class": "wrong"
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 18.154264707991388
+  },
+  {
+   "impl": "eager",
+   "B": 2048,
+   "control": false,
+   "scores_elems": 6442450944,
+   "scores_over_2p31": 3.0,
+   "scores_over_2p32": 1.5,
+   "ffn_elems": 3221225472,
+   "ffn_over_2p31": 1.5,
+   "ffn_over_2p32": 0.75,
+   "predicted": {
+    "forward": "wrong",
+    "status": "raised_backward",
+    "text": "fwd wrong from text 1365 (rule 3), bwd raises (rule 2); FFN bwd may raise/abort first"
+   },
+   "status": "raised_backward",
+   "model": {
+    "attn_implementation": "eager",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "mem": {
+    "after_load": {
+     "current": 499402496,
+     "driver": 1082540032
+    },
+    "after_forward": {
+     "current": 47783954688,
+     "driver": 139748589568
+    },
+    "after_backward": {
+     "current": 76792303872,
+     "driver": 178420219904
+    },
+    "after_free": {
+     "current": 16384,
+     "driver": 162136064
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "loss_sum_device": 1660.618896484375,
+   "forward_s": 18.944459291989915,
+   "backward_s_until_error": 0.5986350000021048,
+   "exception_type": "RuntimeError",
+   "exception_msg": "MPSGraph does not support tensor dims larger than INT_MAX",
+   "oom": false,
+   "anomaly": {
+    "backward_node": "BmmBackward0",
+    "forward_location": "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)",
+    "model_location": "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)",
+    "forward_frames": [
+     "output_capturing.py:286 in wrapper: outputs = func(self, *args, **kwargs)",
+     "modeling_roberta.py:626 in forward: encoder_outputs = self.encoder(",
+     "modeling_roberta.py:509 in forward: hidden_states = layer_module(",
+     "modeling_layers.py:108 in __call__: return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)",
+     "modeling_roberta.py:430 in forward: self_attention_output, _ = self.attention(",
+     "modeling_roberta.py:361 in forward: attention_output, attn_weights = self.self(",
+     "modeling_roberta.py:239 in forward: attn_output, attn_weights = attention_interface(",
+     "modeling_roberta.py:180 in eager_attention_forward: attn_output = torch.matmul(attn_weights, value)"
+    ],
+    "n_messages": 1,
+    "text": "Error detected in BmmBackward0. Traceback of forward call that caused the error:\n  ...\n    return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_compile.py\", line 54, in inner\n    return disable_fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py\", line 1548, in _fn\n    return fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 606, in checkpoint\n    return _checkpoint_impl(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 678, in _checkpoint_impl\n    ret = function(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 430, in forward\n    self_attention_output, _ = self.attention(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 361, in forward\n    attention_output, attn_weights = self.self(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 239, in forward\n    attn_output, attn_weights = attention_interface(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 180, in eager_attention_forward\n    attn_output = torch.matmul(attn_weights, value)\n (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/python_anomaly_mode.cpp:135.)"
+   },
+   "other_warnings": [],
+   "forward": {
+    "n": 2048,
+    "max_rel": 5.158188319011079,
+    "max_rel_finite": 5.158188319011079,
+    "median_rel": 0.0,
+    "max_rel_ok_texts": 7.291644715777887e-08,
+    "median_rel_bad_texts": 0.9068614528351737,
+    "nonfinite_texts": 0,
+    "bad_texts": 683,
+    "bad_frac": 0.33349609375,
+    "bad_runs_text_index": [
+     [
+      1365,
+      2047
+     ]
+    ],
+    "bad_runs_batch_pos": [
+     [
+      1365,
+      2047
+     ]
+    ],
+    "pred_changed": 386,
+    "pred_changed_frac": 0.1884765625,
+    "pred_changed_runs_batch_pos": [
+     [
+      1365,
+      1367
+     ],
+     [
+      1369,
+      1370
+     ],
+     [
+      1372,
+      1372
+     ],
+     [
+      1374,
+      1376
+     ],
+     [
+      1379,
+      1379
+     ],
+     [
+      1382,
+      1384
+     ],
+     [
+      1386,
+      1389
+     ],
+     [
+      1391,
+      1391
+     ],
+     [
+      1393,
+      1397
+     ],
+     [
+      1399,
+      1400
+     ],
+     [
+      1402,
+      1404
+     ],
+     [
+      1409,
+      1409
+     ],
+     [
+      1411,
+      1412
+     ],
+     [
+      1414,
+      1414
+     ],
+     [
+      1416,
+      1418
+     ],
+     [
+      1420,
+      1420
+     ],
+     [
+      1423,
+      1426
+     ],
+     [
+      1429,
+      1435
+     ],
+     [
+      1437,
+      1437
+     ],
+     [
+      1439,
+      1439
+     ],
+     [
+      1441,
+      1441
+     ],
+     [
+      1448,
+      1450
+     ],
+     [
+      1452,
+      1452
+     ],
+     [
+      1454,
+      1454
+     ],
+     [
+      1456,
+      1457
+     ],
+     [
+      1459,
+      1460
+     ],
+     [
+      1463,
+      1467
+     ],
+     [
+      1470,
+      1472
+     ],
+     [
+      1474,
+      1475
+     ],
+     [
+      1479,
+      1480
+     ],
+     [
+      1483,
+      1484
+     ],
+     [
+      1486,
+      1487
+     ],
+     [
+      1489,
+      1490
+     ],
+     [
+      1494,
+      1495
+     ],
+     [
+      1498,
+      1499
+     ],
+     [
+      1501,
+      1501
+     ],
+     [
+      1503,
+      1503
+     ],
+     [
+      1508,
+      1508
+     ],
+     [
+      1513,
+      1513
+     ],
+     [
+      1516,
+      1519
+     ],
+     [
+      1523,
+      1524
+     ],
+     [
+      1527,
+      1528
+     ],
+     [
+      1530,
+      1533
+     ],
+     [
+      1535,
+      1538
+     ],
+     [
+      1540,
+      1541
+     ],
+     [
+      1545,
+      1547
+     ],
+     [
+      1549,
+      1549
+     ],
+     [
+      1551,
+      1551
+     ],
+     [
+      1555,
+      1555
+     ],
+     [
+      1557,
+      1557
+     ]
+    ],
+    "pred_changed_frac_among_bad": 0.5651537335285505,
+    "acc": 0.638671875,
+    "acc_ref": 0.712890625,
+    "loss_sum": 1660.6189047144726,
+    "loss_sum_ref": 1282.2148659182712,
+    "loss_rel_diff": 0.2951174946214677,
+    "nonfinite_logits": 0,
+    "class": "wrong"
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 36.375264417001745
+  },
+  {
+   "impl": "sdpa",
+   "B": 682,
+   "control": false,
+   "scores_elems": 2145386496,
+   "scores_over_2p31": 0.9990234375,
+   "scores_over_2p32": 0.49951171875,
+   "ffn_elems": 1072693248,
+   "ffn_over_2p31": 0.49951171875,
+   "ffn_over_2p32": 0.249755859375,
+   "predicted": {
+    "forward": "unknown",
+    "status": "unknown",
+    "text": "unknown"
+   },
+   "status": "ok",
+   "model": {
+    "attn_implementation": "sdpa",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "mem": {
+    "after_load": {
+     "current": 499402496,
+     "driver": 1082540032
+    },
+    "after_forward": {
+     "current": 15726255872,
+     "driver": 51349438464
+    },
+    "after_backward": {
+     "current": 1000416000,
+     "driver": 72843591680
+    },
+    "after_free": {
+     "current": 5632,
+     "driver": 1235877888
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "loss_sum_device": 429.85528564453125,
+   "forward_s": 6.306159750005463,
+   "backward_s": 50.3307451249857,
+   "anomaly": null,
+   "other_warnings": [],
+   "forward": {
+    "n": 682,
+    "max_rel": 0.0,
+    "max_rel_finite": 0.0,
+    "median_rel": 0.0,
+    "max_rel_ok_texts": 0.0,
+    "median_rel_bad_texts": null,
+    "nonfinite_texts": 0,
+    "bad_texts": 0,
+    "bad_frac": 0.0,
+    "bad_runs_text_index": [],
+    "bad_runs_batch_pos": [],
+    "pred_changed": 0,
+    "pred_changed_frac": 0.0,
+    "pred_changed_runs_batch_pos": [],
+    "pred_changed_frac_among_bad": null,
+    "acc": 0.6979472140762464,
+    "acc_ref": 0.6979472140762464,
+    "loss_sum": 429.85525942593813,
+    "loss_sum_ref": 429.85525942593813,
+    "loss_rel_diff": 0.0,
+    "nonfinite_logits": 0,
+    "class": "correct"
+   },
+   "grad": {
+    "rel_l2": 1.8069900517170613e-06,
+    "cos": 0.9999999999983679,
+    "nonfinite": 0,
+    "norm": 3929.271528225129,
+    "ref_norm": 3929.271487827866,
+    "noise_rel_l2": 7.492350150589896e-07,
+    "tau": 7.492350150589896e-06,
+    "class": "correct",
+    "n_tensors": 201,
+    "n_wrong_tensors": 0,
+    "wrong_tensors": [],
+    "worst_group": "layer0",
+    "groups": {
+     "embeddings": {
+      "rel_l2": 1.7789847704854814e-06,
+      "noise_rel_l2": 8.133054386027068e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.1732992137389655e-06,
+      "wrong_tensors": 0
+     },
+     "layer0": {
+      "rel_l2": 2.1085207887121673e-06,
+      "noise_rel_l2": 9.809668300825113e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.377023033917092e-06,
+      "wrong_tensors": 0
+     },
+     "layer1": {
+      "rel_l2": 2.040467356979349e-06,
+      "noise_rel_l2": 9.700748096287238e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.405347734225667e-06,
+      "wrong_tensors": 0
+     },
+     "layer2": {
+      "rel_l2": 2.026554299821265e-06,
+      "noise_rel_l2": 9.085159702822806e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.412784408182322e-06,
+      "wrong_tensors": 0
+     },
+     "layer3": {
+      "rel_l2": 1.9973300480013142e-06,
+      "noise_rel_l2": 8.44807679490034e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.332909503221042e-06,
+      "wrong_tensors": 0
+     },
+     "layer4": {
+      "rel_l2": 1.8412948367934756e-06,
+      "noise_rel_l2": 7.7191868636969e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.3572199969605063e-06,
+      "wrong_tensors": 0
+     },
+     "layer5": {
+      "rel_l2": 1.8900229931585144e-06,
+      "noise_rel_l2": 8.177888314397076e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.3076956245119693e-06,
+      "wrong_tensors": 0
+     },
+     "layer6": {
+      "rel_l2": 1.8549792159148052e-06,
+      "noise_rel_l2": 7.398932658170947e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 1.9303688835673847e-06,
+      "wrong_tensors": 0
+     },
+     "layer7": {
+      "rel_l2": 1.724640774908479e-06,
+      "noise_rel_l2": 6.919325910627127e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.1298749789236337e-06,
+      "wrong_tensors": 0
+     },
+     "layer8": {
+      "rel_l2": 1.9672027447364348e-06,
+      "noise_rel_l2": 7.974146896393554e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.014828290736777e-06,
+      "wrong_tensors": 0
+     },
+     "layer9": {
+      "rel_l2": 1.818274199904619e-06,
+      "noise_rel_l2": 7.669858035837193e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 1.981014554358216e-06,
+      "wrong_tensors": 0
+     },
+     "layer10": {
+      "rel_l2": 1.8990030642180803e-06,
+      "noise_rel_l2": 7.336918686219916e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 1.9732526011455136e-06,
+      "wrong_tensors": 0
+     },
+     "layer11": {
+      "rel_l2": 1.2975125014779034e-06,
+      "noise_rel_l2": 5.131487359386712e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 2.1109457402816443e-06,
+      "wrong_tensors": 0
+     },
+     "classifier": {
+      "rel_l2": 2.6630964430318897e-07,
+      "noise_rel_l2": 1.13635921621732e-07,
+      "nonfinite": 0,
+      "max_tensor_rel_l2": 3.7534740303748215e-07,
+      "wrong_tensors": 0
+     }
+    }
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 60.80884183300077
+  },
+  {
+   "impl": "sdpa",
+   "B": 683,
+   "control": false,
+   "scores_elems": 2148532224,
+   "scores_over_2p31": 1.00048828125,
+   "scores_over_2p32": 0.500244140625,
+   "ffn_elems": 1074266112,
+   "ffn_over_2p31": 0.500244140625,
+   "ffn_over_2p32": 0.2501220703125,
+   "predicted": {
+    "forward": "unknown",
+    "status": "unknown",
+    "text": "unknown"
+   },
+   "status": "raised_backward",
+   "model": {
+    "attn_implementation": "sdpa",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "mem": {
+    "after_load": {
+     "current": 499402496,
+     "driver": 1082540032
+    },
+    "after_forward": {
+     "current": 16196018432,
+     "driver": 52892942336
+    },
+    "after_backward": {
+     "current": 26182952960,
+     "driver": 66055667712
+    },
+    "after_free": {
+     "current": 5632,
+     "driver": 1237975040
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "loss_sum_device": 429.8758544921875,
+   "forward_s": 7.313744708982995,
+   "backward_s_until_error": 0.14219041701289825,
+   "exception_type": "RuntimeError",
+   "exception_msg": "MPSGraph does not support tensor dims larger than INT_MAX",
+   "oom": false,
+   "anomaly": {
+    "backward_node": "BmmBackward0",
+    "forward_location": "sdpa_attention.py:158 in sdpa_attention_forward: attn_output = torch.nn.functional.scaled_dot_product_attention(",
+    "model_location": "sdpa_attention.py:158 in sdpa_attention_forward: attn_output = torch.nn.functional.scaled_dot_product_attention(",
+    "forward_frames": [
+     "output_capturing.py:286 in wrapper: outputs = func(self, *args, **kwargs)",
+     "modeling_roberta.py:626 in forward: encoder_outputs = self.encoder(",
+     "modeling_roberta.py:509 in forward: hidden_states = layer_module(",
+     "modeling_layers.py:108 in __call__: return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)",
+     "modeling_roberta.py:430 in forward: self_attention_output, _ = self.attention(",
+     "modeling_roberta.py:361 in forward: attention_output, attn_weights = self.self(",
+     "modeling_roberta.py:239 in forward: attn_output, attn_weights = attention_interface(",
+     "sdpa_attention.py:158 in sdpa_attention_forward: attn_output = torch.nn.functional.scaled_dot_product_attention("
+    ],
+    "n_messages": 1,
+    "text": "Error detected in BmmBackward0. Traceback of forward call that caused the error:\n  ...\n    return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_compile.py\", line 54, in inner\n    return disable_fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py\", line 1548, in _fn\n    return fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 606, in checkpoint\n    return _checkpoint_impl(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 678, in _checkpoint_impl\n    ret = function(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 430, in forward\n    self_attention_output, _ = self.attention(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 361, in forward\n    attention_output, attn_weights = self.self(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 239, in forward\n    attn_output, attn_weights = attention_interface(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py\", line 158, in sdpa_attention_forward\n    attn_output = torch.nn.functional.scaled_dot_product_attention(\n (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/python_anomaly_mode.cpp:135.)"
+   },
+   "other_warnings": [],
+   "forward": {
+    "n": 683,
+    "max_rel": 1.4583291558279391e-07,
+    "max_rel_finite": 1.4583291558279391e-07,
+    "median_rel": 0.0,
+    "max_rel_ok_texts": 1.4583291558279391e-07,
+    "median_rel_bad_texts": null,
+    "nonfinite_texts": 0,
+    "bad_texts": 0,
+    "bad_frac": 0.0,
+    "bad_runs_text_index": [],
+    "bad_runs_batch_pos": [],
+    "pred_changed": 0,
+    "pred_changed_frac": 0.0,
+    "pred_changed_runs_batch_pos": [],
+    "pred_changed_frac_among_bad": null,
+    "acc": 0.698389458272328,
+    "acc_ref": 0.698389458272328,
+    "loss_sum": 429.8758545797318,
+    "loss_sum_ref": 429.8758545797318,
+    "loss_rel_diff": 0.0,
+    "nonfinite_logits": 0,
+    "class": "correct"
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 13.29523729198263
+  },
+  {
+   "impl": "sdpa",
+   "B": 1365,
+   "control": false,
+   "scores_elems": 4293918720,
+   "scores_over_2p31": 1.99951171875,
+   "scores_over_2p32": 0.999755859375,
+   "ffn_elems": 2146959360,
+   "ffn_over_2p31": 0.999755859375,
+   "ffn_over_2p32": 0.4998779296875,
+   "predicted": {
+    "forward": "unknown",
+    "status": "unknown",
+    "text": "unknown"
+   },
+   "status": "raised_backward",
+   "model": {
+    "attn_implementation": "sdpa",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "mem": {
+    "after_load": {
+     "current": 499402496,
+     "driver": 1082540032
+    },
+    "after_forward": {
+     "current": 30951666688,
+     "driver": 101462982656
+    },
+    "after_backward": {
+     "current": 50299362304,
+     "driver": 127242534912
+    },
+    "after_free": {
+     "current": 11008,
+     "driver": 2309619712
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "loss_sum_device": 854.2929077148438,
+   "forward_s": 15.715182958985679,
+   "backward_s_until_error": 0.24381995800649747,
+   "exception_type": "RuntimeError",
+   "exception_msg": "MPSGraph does not support tensor dims larger than INT_MAX",
+   "oom": false,
+   "anomaly": {
+    "backward_node": "BmmBackward0",
+    "forward_location": "sdpa_attention.py:158 in sdpa_attention_forward: attn_output = torch.nn.functional.scaled_dot_product_attention(",
+    "model_location": "sdpa_attention.py:158 in sdpa_attention_forward: attn_output = torch.nn.functional.scaled_dot_product_attention(",
+    "forward_frames": [
+     "output_capturing.py:286 in wrapper: outputs = func(self, *args, **kwargs)",
+     "modeling_roberta.py:626 in forward: encoder_outputs = self.encoder(",
+     "modeling_roberta.py:509 in forward: hidden_states = layer_module(",
+     "modeling_layers.py:108 in __call__: return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)",
+     "modeling_roberta.py:430 in forward: self_attention_output, _ = self.attention(",
+     "modeling_roberta.py:361 in forward: attention_output, attn_weights = self.self(",
+     "modeling_roberta.py:239 in forward: attn_output, attn_weights = attention_interface(",
+     "sdpa_attention.py:158 in sdpa_attention_forward: attn_output = torch.nn.functional.scaled_dot_product_attention("
+    ],
+    "n_messages": 1,
+    "text": "Error detected in BmmBackward0. Traceback of forward call that caused the error:\n  ...\n    return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_compile.py\", line 54, in inner\n    return disable_fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py\", line 1548, in _fn\n    return fn(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 606, in checkpoint\n    return _checkpoint_impl(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/utils/checkpoint.py\", line 678, in _checkpoint_impl\n    ret = function(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 430, in forward\n    self_attention_output, _ = self.attention(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 361, in forward\n    attention_output, attn_weights = self.self(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1783, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1794, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/models/roberta/modeling_roberta.py\", line 239, in forward\n    attn_output, attn_weights = attention_interface(\n  File \"/Users/USER/.cache/uv/archive-v0/z_S_EkSDRGOJn1eq/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py\", line 158, in sdpa_attention_forward\n    attn_output = torch.nn.functional.scaled_dot_product_attention(\n (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/python_anomaly_mode.cpp:135.)"
+   },
+   "other_warnings": [],
+   "forward": {
+    "n": 1365,
+    "max_rel": 1.4583291558279391e-07,
+    "max_rel_finite": 1.4583291558279391e-07,
+    "median_rel": 0.0,
+    "max_rel_ok_texts": 1.4583291558279391e-07,
+    "median_rel_bad_texts": null,
+    "nonfinite_texts": 0,
+    "bad_texts": 0,
+    "bad_frac": 0.0,
+    "bad_runs_text_index": [],
+    "bad_runs_batch_pos": [],
+    "pred_changed": 0,
+    "pred_changed_frac": 0.0,
+    "pred_changed_runs_batch_pos": [],
+    "pred_changed_frac_among_bad": null,
+    "acc": 0.7076923076923077,
+    "acc_ref": 0.7076923076923077,
+    "loss_sum": 854.2929128361866,
+    "loss_sum_ref": 854.2929128361866,
+    "loss_rel_diff": 0.0,
+    "nonfinite_logits": 0,
+    "class": "correct"
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 25.681566334009403
+  },
+  {
+   "impl": "sdpa",
+   "B": 1366,
+   "control": false,
+   "scores_elems": 4297064448,
+   "scores_over_2p31": 2.0009765625,
+   "scores_over_2p32": 1.00048828125,
+   "ffn_elems": 2148532224,
+   "ffn_over_2p31": 1.00048828125,
+   "ffn_over_2p32": 0.500244140625,
+   "predicted": {
+    "forward": "unknown",
+    "status": "unknown",
+    "text": "unknown"
+   },
+   "status": "raised_forward",
+   "model": {
+    "attn_implementation": "sdpa",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "mem": {
+    "after_load": {
+     "current": 499402496,
+     "driver": 1082540032
+    },
+    "after_forward": {
+     "current": 499413504,
+     "driver": 62372069376
+    },
+    "after_free": {
+     "current": 11008,
+     "driver": 61472768
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "forward_s_until_error": 0.4993242500058841,
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS all_reduction: tensors requiring 64-bit indexing are not supported (numel=4297064448)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "child_exit_code": 0,
+   "child_wall_s": 4.799886749999132
+  },
+  {
+   "impl": "sdpa",
+   "B": 2048,
+   "control": false,
+   "scores_elems": 6442450944,
+   "scores_over_2p31": 3.0,
+   "scores_over_2p32": 1.5,
+   "ffn_elems": 3221225472,
+   "ffn_over_2p31": 1.5,
+   "ffn_over_2p32": 0.75,
+   "predicted": {
+    "forward": "unknown",
+    "status": "unknown",
+    "text": "unknown"
+   },
+   "status": "raised_forward",
+   "model": {
+    "attn_implementation": "sdpa",
+    "dropout_modules_set_to_0": 38,
+    "config_dropouts": {
+     "hidden_dropout_prob": 0.0,
+     "attention_probs_dropout_prob": 0.0,
+     "classifier_dropout": 0.0
+    },
+    "training": true,
+    "checkpointed_layers": 12,
+    "n_params": 124647939
+   },
+   "mem": {
+    "after_load": {
+     "current": 499402496,
+     "driver": 1082540032
+    },
+    "after_forward": {
+     "current": 499418880,
+     "driver": 91329544192
+    },
+    "after_free": {
+     "current": 16384,
+     "driver": 61472768
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "forward_s_until_error": 0.5677798749820795,
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS all_reduction: tensors requiring 64-bit indexing are not supported (numel=6442450944)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "child_exit_code": 0,
+   "child_wall_s": 5.874769832997117
+  }
+ ]
+}

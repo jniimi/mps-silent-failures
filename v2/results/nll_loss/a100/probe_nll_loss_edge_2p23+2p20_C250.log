@@ -1,0 +1,31 @@
+# run: probe_nll_loss_edge_2p23+2p20_C250
+# date (UTC): 2026-09-24T08:17:32Z
+# GPU: NVIDIA A100-SXM4-80GB, 81920 MiB, 580.82.07
+# python / torch: Python 3.12.3 | torch 2.14.0+cu130 | torch.version.cuda 13.0
+# original script sha256: 7a85cd8a7ce3b7d811f8bdbdf112f6e7bd24482d101d7cf3966b149307a6767b  (repository v2/firstpass/probe_nll_loss_edge.py at commit 1554967)
+# cwd: /content/work/v2
+# command: PYTHONUNBUFFERED=1 /content/venv/bin/python firstpass/probe_nll_loss_edge.py '2**23 + 2**20' '250'
+#
+# The copy that was run was made on the VM with:
+#   sed -e 's/"mps"/"cuda"/g' -e 's/on MPS/on CUDA/g' orig/firstpass/probe_nll_loss_edge.py > v2/firstpass/probe_nll_loss_edge.py
+# diff -u (original from the repository vs. the copy that was run):
+--- orig/firstpass/probe_nll_loss_edge.py	2026-09-24 08:15:51.839477131 +0000
++++ v2/firstpass/probe_nll_loss_edge.py	2026-09-24 08:16:03.259404783 +0000
+@@ -3,7 +3,7 @@
+ R, C = int(eval(sys.argv[1])), int(sys.argv[2])
+ torch.manual_seed(0)
+ xc = torch.rand(R, C).mul_(8).sub_(4); tc = torch.randint(0, C, (R,))
+-x, t = xc.to("mps"), tc.to("mps")
++x, t = xc.to("cuda"), tc.to("cuda")
+ lsm = F.log_softmax(x, -1)
+ got = F.nll_loss(lsm, t, reduction="none").cpu().double()
+ ch = 2**20
+
+# ---- stdout/stderr of the run ----
+R=9437184 C=250 numel=2359296000 (2^31 x 1.0986); wrong rows = 0
+# ---- end of run ----
+# exit code: 0
+# wall time: 29.105508835 s
+# max GPU memory.used seen by nvidia-smi (polled every 0.5 s): 18614 MiB
+# max resident set size of the process (/usr/bin/time -v): 14239384 kB
+# finished (UTC): 2026-09-24T08:18:04Z

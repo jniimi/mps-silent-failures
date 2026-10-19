@@ -1,0 +1,6028 @@
+{
+ "env": {
+  "macos": "27.0",
+  "macos_build": "26A428",
+  "hw_model": "Mac14,14",
+  "chip": "Apple M2 Ultra",
+  "mem_bytes": 206158430208,
+  "python": "3.12.12",
+  "torch": "2.14.0",
+  "numpy": "2.5.3",
+  "git_rev": "00a01f26fa519085ddb397affa222a295eb63001",
+  "git_dirty_v2": false
+ },
+ "device": "mps",
+ "tiny": false,
+ "args": {
+  "products": [
+   "bmm",
+   "relation"
+  ],
+  "heads": [
+   "ce",
+   "kl_rows",
+   "kl_sum",
+   "lse",
+   "amax",
+   "sum"
+  ],
+  "sizes": [],
+  "chunks": [],
+  "device": "mps",
+  "seed": 0,
+  "timeout_min": 120,
+  "out": "/Users/USER/Documents/GitHub/mps-boundary/v2/results/bwd_heads",
+  "tiny": false,
+  "no_anomaly": false,
+  "no_fingerprint": false,
+  "skip_over_gb": null,
+  "keep_work": false,
+  "debug_raise_backward": [],
+  "debug_crash": [],
+  "debug_corrupt_grad": []
+ },
+ "shapes": {
+  "bmm": {
+   "M": 256,
+   "K": 64,
+   "N": 256
+  },
+  "relation": {
+   "R": 64,
+   "L": 512,
+   "d": 16
+  }
+ },
+ "sizes": {
+  "bmm": [
+   65536,
+   65537
+  ],
+  "relation": [
+   256,
+   257
+  ]
+ },
+ "chunks": {
+  "bmm": [
+   8192,
+   4096
+  ],
+  "relation": [
+   32,
+   16
+  ]
+ },
+ "dtype": "fp32",
+ "seed": 0,
+ "targets": "leaves, t and Z are generated per unit (bmm batch / relation sequence) on CPU from a Generator seeded with (seed, kind, unit index), so they do not depend on the size or the chunking; T = softmax(Z, -1) per unit. The full run copies the whole CPU tensors to the device once and verifies them by reading back in blocks (inputs_verified); the references generate each chunk the same way",
+ "reference": "same device and head, units in chunks of `chunk` (second reference: chunk2 = chunk // 2, noise floor); loss summed in float64; leaf grads placed into full-size CPU float32 tensors (each element comes from exactly one chunk); on MPS the first 2 units are also computed on CPU (ref.vs_cpu)",
+ "fingerprint": "per unit (sum x^2, sum w*x) in float64 on CPU (w fixed +-1) of Y (the head input) and of G (grad at the product output, via a tensor hook), in the full run and both references; per-unit rel = max(|d sum x^2| / (2 sum x_ref^2), |d sum w*x| / ||x_ref||)",
+ "tolerance": "unit wrong if rel > max(10 * noise_unit, 1e-05) (grads: rel L2 per unit; Y, G: fingerprint rel); global grad rel L2: tau = max(10 * noise, 1e-06); loss rel diff: max(10 * noise, 1e-05) (one wrong unit of 65537 moves the loss by only ~1.5e-5 x its own relative error; the Y check is the per-unit forward test); noise = second reference vs first",
+ "anomaly": "forward+backward under set_detect_anomaly(True, check_nan=False)",
+ "hypotheses": {
+  "rules": [
+   "1. output > 2^32 elements and an operand is a transposed view -> silently wrong in every batch; output > 2^32 otherwise -> correct",
+   "2. an operand that is a view has >= 2^31 elements -> raises (INT_MAX)",
+   "3. a contiguous operand has > 2^32 elements -> silently wrong only in batches beyond element 2^32"
+  ],
+  "assumptions": "bmm backward: grad_a = G @ b^T, grad_b = a^T @ G (transposed views); matmul folds (n, R) into one batch dim and copies the non-mergeable q and q^T into contiguous 3-D tensors (see dispatch)",
+  "control": "Y exactly 2^32 elements (bmm B=65536, relation n=256): forward and gradients correct; except bmm + sum, whose backward G = expand(ones) is a stride-0 view with 2^32 >= 2^31 elements -> rule 2 (raise in BmmBackward0), if rule 2 counts the logical numel of a stride-0 view",
+  "above": "Y just above 2^32 (bmm B=65537, relation n=257): forward product correct (rule 1, contiguous operands); the gradient products take G (contiguous, > 2^32) -> rule 3 -> leaf gradients wrong only in the units beyond element 2^32 of G (bmm: batch 65536; relation: element 2^32 is folded batch 16384 = sequence 256, head 0 -> sequence 256); the loss head may raise first if it reduces over > 2^32 elements",
+  "reduction_check": "MPS reductions over tensors requiring 64-bit indexing raise NotImplementedError (observed: full sum at numel 2^32 + 2^20; dim-wise all inside _safe_softmax at 2^32 + 2^21; not at numel between 2^31 and 2^32). Exactly 2^32 is untested (raises if the check is numel > UINT32_MAX)",
+  "heads": {
+   "ce": "log_softmax (softmax family; softmax on > 2^32 elements was correct in inference) and nll_loss (reduces over rows = numel/C < 2^32): no reduction over > 2^32 elements in forward; backward (nll_loss_backward, _log_softmax_backward_data) unknown",
+   "kl_rows": "dim-wise sum over > 2^32 elements (the dim-wise all in _safe_softmax raised at numel 2^32 + 2^21)",
+   "kl_sum": "full sum over > 2^32 elements inside kl_div (MPS sum_reduction raised for a full sum at numel 2^32 + 2^20)",
+   "lse": "logsumexp: dim-wise amax and sum over > 2^32 elements",
+   "amax": "dim-wise amax over > 2^32 elements; its backward counts ties with a dim-wise sum",
+   "sum": "full sum over > 2^32 elements; if passed, the backward G is expand(ones), a stride-0 view with > 2^31 elements: bmm -> rule 2 (raise); relation: the /sqrt(d) backward materializes G -> rule 3"
+  }
+ },
+ "mps_high_watermark_ratio": null,
+ "cases": [
+  {
+   "name": "bmm_B65536_ce",
+   "product": "bmm",
+   "size": 65536,
+   "head": "ce",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "batch",
+   "boundary_unit": null,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "correct",
+    "text": "ok: fwd and grads correct"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 8.589934592,
+    "target_gb": 0.134217728,
+    "k_Y": 3,
+    "device_peak_gb": 68.853694464,
+    "setup_peak_gb": 17.44830464,
+    "host_grads_gb": 17.179869184
+   },
+   "status": "ok",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 19.459213957976317,
+    "copy_s": 0.39098975001252256,
+    "verify_s": 0.2850383339973632,
+    "product_s": 0.5669957910140511,
+    "fp_y_s": 2.3292992080096155,
+    "head_s": 1.071810583001934,
+    "forward_s": 3.96872400000575,
+    "g_fp_s": 2.4361121670226566,
+    "backward_s": 3.345619583997177
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 8724152320,
+     "driver": 9664086016
+    },
+    "after_forward": {
+     "current": 25904022016,
+     "driver": 61415489536
+    },
+    "after_backward": {
+     "current": 17314087168,
+     "driver": 78796685312
+    },
+    "peak_sampled": 79870427136,
+    "after_free": {
+     "current": 0,
+     "driver": 69599232
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "t": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 524288
+    }
+   },
+   "loss_full": 50685488.0,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 101369581.0,
+    "loss2": 101369583.0,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     26.126355750020593,
+     27.19556870800443
+    ],
+    "mem_end": {
+     "current": 536870912,
+     "driver": 3766878208
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 7.40678031695739e-08,
+      "b": 6.878669095274079e-08
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 2.1918838220466818e-08
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": 50685488.0,
+     "ref": 101369581.0,
+     "ref2": 101369583.0,
+     "noise": 1.9729784618523776e-08,
+     "rel_diff": 0.4999931192376143,
+     "tau": 1e-05,
+     "class": "wrong"
+    },
+    "y_check": {
+     "n_units": 65536,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": {
+     "n_units": 65536,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "grads": {
+     "a": {
+      "rel_l2": 0.0,
+      "cos": 1.0,
+      "noise_rel_l2": 0.0,
+      "tau": 1e-06,
+      "nonfinite": 0,
+      "ref_norm": 11689.264588844251,
+      "class": "correct",
+      "units": {
+       "n_units": 65536,
+       "n_wrong": 0,
+       "wrong_runs": [],
+       "max_rel": 0.0,
+       "max_rel_ok_units": 0.0,
+       "max_noise": 0.0,
+       "worst": [
+        [
+         0,
+         0.0,
+         0.0
+        ],
+        [
+         1,
+         0.0,
+         0.0
+        ],
+        [
+         2,
+         0.0,
+         0.0
+        ],
+        [
+         3,
+         0.0,
+         0.0
+        ],
+        [
+         4,
+         0.0,
+         0.0
+        ]
+       ],
+       "tail_rel": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     },
+     "b": {
+      "rel_l2": 0.0,
+      "cos": 1.0,
+      "noise_rel_l2": 0.0,
+      "tau": 1e-06,
+      "nonfinite": 0,
+      "ref_norm": 11690.702291529766,
+      "class": "correct",
+      "units": {
+       "n_units": 65536,
+       "n_wrong": 0,
+       "wrong_runs": [],
+       "max_rel": 0.0,
+       "max_rel_ok_units": 0.0,
+       "max_noise": 0.0,
+       "worst": [
+        [
+         0,
+         0.0,
+         0.0
+        ],
+        [
+         1,
+         0.0,
+         0.0
+        ],
+        [
+         2,
+         0.0,
+         0.0
+        ],
+        [
+         3,
+         0.0,
+         0.0
+        ],
+        [
+         4,
+         0.0,
+         0.0
+        ]
+       ],
+       "tail_rel": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     }
+    }
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 84.24513816699618
+  },
+  {
+   "name": "bmm_B65536_kl_rows",
+   "product": "bmm",
+   "size": 65536,
+   "head": "kl_rows",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "batch",
+   "boundary_unit": null,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "correct",
+    "text": "ok: fwd and grads correct (exactly 2^32: head fwd raises first if the reduction check is numel >= 2^32)"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 8.589934592,
+    "target_gb": 17.179869184,
+    "k_Y": 4,
+    "device_peak_gb": 103.079215104,
+    "setup_peak_gb": 51.539607552,
+    "host_grads_gb": 17.179869184
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 65.82375004098867,
+    "copy_s": 1.1184086249850225,
+    "verify_s": 0.7870585420168936,
+    "product_s": 0.5745219579839613,
+    "fp_y_s": 2.3142220829904545
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 25769803776,
+     "driver": 25770196992
+    },
+    "after_forward": {
+     "current": 25769803776,
+     "driver": 78519861248
+    },
+    "peak_sampled": 78519861248,
+    "after_free": {
+     "current": 0,
+     "driver": 2490368
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "T": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 4096
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 2.9977542499837,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:273 in h_kl_rows: return (T * (T.clamp_min(torch.finfo(T.dtype).tiny).log() - lp)).sum(-1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4294967296)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 16603294.125,
+    "loss2": 16603294.125,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     74.20768891699845,
+     75.23739274998661
+    ],
+    "mem_end": {
+     "current": 536870912,
+     "driver": 2685009920
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 2.0773189061260535e-07,
+      "b": 1.910881768400848e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 1.9718882520550272e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 16603294.125,
+     "ref2": 16603294.125,
+     "noise": 0.0
+    },
+    "y_check": {
+     "n_units": 65536,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 223.12669274999644
+  },
+  {
+   "name": "bmm_B65536_kl_sum",
+   "product": "bmm",
+   "size": 65536,
+   "head": "kl_sum",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "batch",
+   "boundary_unit": null,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "correct",
+    "text": "ok: fwd and grads correct (exactly 2^32: head fwd raises first if the reduction check is numel >= 2^32)"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 8.589934592,
+    "target_gb": 17.179869184,
+    "k_Y": 4,
+    "device_peak_gb": 103.079215104,
+    "setup_peak_gb": 51.539607552,
+    "host_grads_gb": 17.179869184
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 66.20286945797852,
+    "copy_s": 1.1123799160122871,
+    "verify_s": 0.7724125419917982,
+    "product_s": 0.5500568750139792,
+    "fp_y_s": 2.3107591249863617
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 25769803776,
+     "driver": 25770196992
+    },
+    "after_forward": {
+     "current": 25769803776,
+     "driver": 94634377216
+    },
+    "peak_sampled": 94634377216,
+    "after_free": {
+     "current": 0,
+     "driver": 2490368
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "T": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 4096
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 2.9306127919990104,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:277 in h_kl_sum: return F.kl_div(F.log_softmax(ys.pop(), -1), T, reduction=\"sum\")",
+    "functional.py:3470 in kl_div: reduced = torch.kl_div(input, target, reduction_enum, log_target=log_target)"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4294967296)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 16603294.125,
+    "loss2": 16603294.25,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     74.48157604201697,
+     75.43462245800765
+    ],
+    "mem_end": {
+     "current": 536870912,
+     "driver": 3758489600
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 2.0773189061260535e-07,
+      "b": 1.910881768400848e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 1.9718882520550272e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 16603294.125,
+     "ref2": 16603294.25,
+     "noise": 7.52862649176252e-09
+    },
+    "y_check": {
+     "n_units": 65536,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 223.9404719999875
+  },
+  {
+   "name": "bmm_B65536_lse",
+   "product": "bmm",
+   "size": 65536,
+   "head": "lse",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "batch",
+   "boundary_unit": null,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "correct",
+    "text": "ok: fwd and grads correct (exactly 2^32: head fwd raises first if the reduction check is numel >= 2^32)"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 8.589934592,
+    "target_gb": 0.0,
+    "k_Y": 4,
+    "device_peak_gb": 85.89934592,
+    "setup_peak_gb": 17.179869184,
+    "host_grads_gb": 17.179869184
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 20.245058082975447,
+    "copy_s": 0.35921808300190605,
+    "verify_s": 0.26159054099116474,
+    "product_s": 0.5691831669828389,
+    "fp_y_s": 2.319908583012875
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 8589934592,
+     "driver": 8590344192
+    },
+    "after_forward": {
+     "current": 8589934592,
+     "driver": 26843938816
+    },
+    "peak_sampled": 26843938816,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 2.8897264169936534,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:281 in h_lse: return torch.logsumexp(ys.pop(), -1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS max_reduction: tensors requiring 64-bit indexing are not supported (numel=4294967296)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 101373235.0,
+    "loss2": 101373235.0,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     27.37573583298945,
+     28.317257959017297
+    ],
+    "mem_end": {
+     "current": 536870912,
+     "driver": 1611005952
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 1.6345626256902914e-07,
+      "b": 1.287372549119925e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 1.1345180834522626e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 101373235.0,
+     "ref2": 101373235.0,
+     "noise": 0.0
+    },
+    "y_check": {
+     "n_units": 65536,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 80.41722458301228
+  },
+  {
+   "name": "bmm_B65536_amax",
+   "product": "bmm",
+   "size": 65536,
+   "head": "amax",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "batch",
+   "boundary_unit": null,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "correct",
+    "text": "ok: fwd and grads correct (exactly 2^32: head fwd raises first if the reduction check is numel >= 2^32)"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 8.589934592,
+    "target_gb": 0.0,
+    "k_Y": 3,
+    "device_peak_gb": 68.719476736,
+    "setup_peak_gb": 17.179869184,
+    "host_grads_gb": 17.179869184
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 20.38153820898151,
+    "copy_s": 0.3664473750104662,
+    "verify_s": 0.2683823750121519,
+    "product_s": 0.5857728749979287,
+    "fp_y_s": 2.3083279999846127
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 8589934592,
+     "driver": 8590344192
+    },
+    "after_forward": {
+     "current": 8589934592,
+     "driver": 26843938816
+    },
+    "peak_sampled": 26843938816,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 2.8945952499925625,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:285 in h_amax: return ys.pop().amax(-1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS max_reduction: tensors requiring 64-bit indexing are not supported (numel=4294967296)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 47251568.5,
+    "loss2": 47251568.25,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     26.898307249997742,
+     28.13883724997868
+    ],
+    "mem_end": {
+     "current": 536870912,
+     "driver": 2684747776
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 0.0,
+      "b": 0.0
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 0.0
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 47251568.5,
+     "ref2": 47251568.25,
+     "noise": 5.2908296578556965e-09
+    },
+    "y_check": {
+     "n_units": 65536,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 79.94673691698699
+  },
+  {
+   "name": "bmm_B65536_sum",
+   "product": "bmm",
+   "size": 65536,
+   "head": "sum",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "batch",
+   "boundary_unit": null,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "raised_backward",
+    "certain": false,
+    "grads": "—",
+    "text": "bwd raises (rule 2 on the stride-0 G) (exactly 2^32: head fwd raises first if the reduction check is numel >= 2^32)",
+    "note": "full sum over > 2^32 elements; if passed, the backward G is expand(ones), a stride-0 view with > 2^31 elements: bmm -> rule 2 (raise); relation: the /sqrt(d) backward materializes G -> rule 3"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 8.589934592,
+    "target_gb": 0.0,
+    "k_Y": 1,
+    "device_peak_gb": 34.359738368,
+    "setup_peak_gb": 17.179869184,
+    "host_grads_gb": 17.179869184
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 20.58918079198338,
+    "copy_s": 0.3665699160192162,
+    "verify_s": 0.26467699999921024,
+    "product_s": 0.5845716250187252,
+    "fp_y_s": 2.363034708017949
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 8589934592,
+     "driver": 8590344192
+    },
+    "after_forward": {
+     "current": 8589934592,
+     "driver": 25778585600
+    },
+    "peak_sampled": 26843938816,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 2.948023334000027,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:289 in h_sum: return ys.pop().sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4294967296)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 2039985.046875,
+    "loss2": 2039985.046875,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     26.762538917013444,
+     27.535854000016116
+    ],
+    "mem_end": {
+     "current": 536870912,
+     "driver": 4832231424
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 0.0,
+      "b": 0.0
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 0.0
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 2039985.046875,
+     "ref2": 2039985.046875,
+     "noise": 0.0
+    },
+    "y_check": {
+     "n_units": 65536,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 79.44215704101953
+  },
+  {
+   "name": "relation_n256_ce",
+   "product": "relation",
+   "size": 256,
+   "head": "ce",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "sequence",
+   "boundary_unit": null,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "correct",
+    "text": "ok: fwd and grads correct"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 0.536870912,
+    "target_gb": 0.067108864,
+    "k_Y": 3,
+    "device_peak_gb": 52.68045824,
+    "setup_peak_gb": 1.207959552,
+    "host_grads_gb": 1.073741824
+   },
+   "status": "ok",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 1.2141707080008928,
+    "copy_s": 0.04837254199082963,
+    "verify_s": 0.03446604099008255,
+    "product_s": 1.2299472499871626,
+    "fp_y_s": 2.47212687501451,
+    "head_s": 0.8115700829948764,
+    "forward_s": 4.514099583990173,
+    "g_fp_s": 2.5303787080047186,
+    "backward_s": 3.4882044999976642
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 603979776,
+     "driver": 1611022336
+    },
+    "after_forward": {
+     "current": 18857591296,
+     "driver": 53798633472
+    },
+    "after_backward": {
+     "current": 1140850944,
+     "driver": 71079165952
+    },
+    "peak_sampled": 72152907776,
+    "after_free": {
+     "current": 0,
+     "driver": 36044800
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    },
+    "t": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 4096
+    }
+   },
+   "loss_full": 28693180.0,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 57494800.5,
+    "loss2": 57494799.75,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     6.658887583995238,
+     6.644081125006778
+    ],
+    "mem_end": {
+     "current": 67108864,
+     "driver": 2154168320
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 9.664088917187801e-08
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 2.860821009167599e-08
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": 28693180.0,
+     "ref": 57494800.5,
+     "ref2": 57494799.75,
+     "noise": 1.3044657838233564e-08,
+     "rel_diff": 0.500943046145538,
+     "tau": 1e-05,
+     "class": "wrong"
+    },
+    "y_check": {
+     "n_units": 256,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": {
+     "n_units": 256,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "grads": {
+     "x": {
+      "rel_l2": 0.0,
+      "cos": 1.0,
+      "noise_rel_l2": 0.0,
+      "tau": 1e-06,
+      "nonfinite": 0,
+      "ref_norm": 4690.655695954582,
+      "class": "correct",
+      "units": {
+       "n_units": 256,
+       "n_wrong": 0,
+       "wrong_runs": [],
+       "max_rel": 0.0,
+       "max_rel_ok_units": 0.0,
+       "max_noise": 0.0,
+       "worst": [
+        [
+         0,
+         0.0,
+         0.0
+        ],
+        [
+         1,
+         0.0,
+         0.0
+        ],
+        [
+         2,
+         0.0,
+         0.0
+        ],
+        [
+         3,
+         0.0,
+         0.0
+        ],
+        [
+         4,
+         0.0,
+         0.0
+        ]
+       ],
+       "tail_rel": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      }
+     }
+    }
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 24.196210166992387
+  },
+  {
+   "name": "relation_n256_kl_rows",
+   "product": "relation",
+   "size": 256,
+   "head": "kl_rows",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "sequence",
+   "boundary_unit": null,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "correct",
+    "text": "ok: fwd and grads correct (exactly 2^32: head fwd raises first if the reduction check is numel >= 2^32)"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 0.536870912,
+    "target_gb": 17.179869184,
+    "k_Y": 4,
+    "device_peak_gb": 86.973087744,
+    "setup_peak_gb": 35.433480192,
+    "host_grads_gb": 1.073741824
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 42.01319745799992,
+    "copy_s": 0.7563913330086507,
+    "verify_s": 0.5487525000062305,
+    "product_s": 1.2397449999989476,
+    "fp_y_s": 2.4146852499980014
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 17716740096,
+     "driver": 17717133312
+    },
+    "after_forward": {
+     "current": 17716740096,
+     "driver": 71473430528
+    },
+    "peak_sampled": 71473430528,
+    "after_free": {
+     "current": 0,
+     "driver": 2490368
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    },
+    "T": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 3.7020627910096664,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:273 in h_kl_rows: return (T * (T.clamp_min(torch.finfo(T.dtype).tiny).log() - lp)).sum(-1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4294967296)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 9331244.0,
+    "loss2": 9331244.125,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     47.732848791987635,
+     47.18435766699258
+    ],
+    "mem_end": {
+     "current": 67108864,
+     "driver": 2148139008
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 1.7228045302616057e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 1.5745415648070955e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 9331244.0,
+     "ref2": 9331244.125,
+     "noise": 1.339585590088524e-08
+    },
+    "y_check": {
+     "n_units": 256,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 144.9909891670104
+  },
+  {
+   "name": "relation_n256_kl_sum",
+   "product": "relation",
+   "size": 256,
+   "head": "kl_sum",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "sequence",
+   "boundary_unit": null,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "correct",
+    "text": "ok: fwd and grads correct (exactly 2^32: head fwd raises first if the reduction check is numel >= 2^32)"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 0.536870912,
+    "target_gb": 17.179869184,
+    "k_Y": 4,
+    "device_peak_gb": 86.973087744,
+    "setup_peak_gb": 35.433480192,
+    "host_grads_gb": 1.073741824
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 42.11230695800623,
+    "copy_s": 0.7487503750016913,
+    "verify_s": 0.5689928339852486,
+    "product_s": 1.219145250011934,
+    "fp_y_s": 2.415508542006137
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 17716740096,
+     "driver": 17717133312
+    },
+    "after_forward": {
+     "current": 17716740096,
+     "driver": 87587946496
+    },
+    "peak_sampled": 87587946496,
+    "after_free": {
+     "current": 0,
+     "driver": 2490368
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    },
+    "T": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 3.644573291996494,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:277 in h_kl_sum: return F.kl_div(F.log_softmax(ys.pop(), -1), T, reduction=\"sum\")",
+    "functional.py:3470 in kl_div: reduced = torch.kl_div(input, target, reduction_enum, log_target=log_target)"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4294967296)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 9331243.75,
+    "loss2": 9331244.1875,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     47.76975491698249,
+     47.331113917025505
+    ],
+    "mem_end": {
+     "current": 67108864,
+     "driver": 2148139008
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 1.7228045302616057e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 1.5745415648070955e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 9331243.75,
+     "ref2": 9331244.1875,
+     "noise": 4.6885496909241064e-08
+    },
+    "y_check": {
+     "n_units": 256,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 145.21172829100396
+  },
+  {
+   "name": "relation_n256_lse",
+   "product": "relation",
+   "size": 256,
+   "head": "lse",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "sequence",
+   "boundary_unit": null,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "correct",
+    "text": "ok: fwd and grads correct (exactly 2^32: head fwd raises first if the reduction check is numel >= 2^32)"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 0.536870912,
+    "target_gb": 0.0,
+    "k_Y": 4,
+    "device_peak_gb": 69.79321856,
+    "setup_peak_gb": 1.073741824,
+    "host_grads_gb": 1.073741824
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 1.1950925000128336,
+    "copy_s": 0.021876790997339413,
+    "verify_s": 0.028913625021232292,
+    "product_s": 1.2350324580038432,
+    "fp_y_s": 2.4711406670103315
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 536870912,
+     "driver": 537280512
+    },
+    "after_forward": {
+     "current": 536870912,
+     "driver": 35970744320
+    },
+    "peak_sampled": 37044486144,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 3.7065926670038607,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:281 in h_lse: return torch.logsumexp(ys.pop(), -1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS max_reduction: tensors requiring 64-bit indexing are not supported (numel=4294967296)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 57563032.0,
+    "loss2": 57563031.75,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     6.872693958983291,
+     6.8108095829957165
+    ],
+    "mem_end": {
+     "current": 67108864,
+     "driver": 1074135040
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 1.6384543241694183e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 2.9520538373456787e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 57563032.0,
+     "ref2": 57563031.75,
+     "noise": 4.3430651811391725e-09
+    },
+    "y_check": {
+     "n_units": 256,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 19.737820499984082
+  },
+  {
+   "name": "relation_n256_amax",
+   "product": "relation",
+   "size": 256,
+   "head": "amax",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "sequence",
+   "boundary_unit": null,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "correct",
+    "text": "ok: fwd and grads correct (exactly 2^32: head fwd raises first if the reduction check is numel >= 2^32)"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 0.536870912,
+    "target_gb": 0.0,
+    "k_Y": 3,
+    "device_peak_gb": 52.613349376,
+    "setup_peak_gb": 1.073741824,
+    "host_grads_gb": 1.073741824
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 1.1944110000040382,
+    "copy_s": 0.021274209022521973,
+    "verify_s": 0.0299799170170445,
+    "product_s": 1.2435562080063391,
+    "fp_y_s": 2.4167468340019695
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 536870912,
+     "driver": 537280512
+    },
+    "after_forward": {
+     "current": 536870912,
+     "driver": 35970744320
+    },
+    "peak_sampled": 35970760704,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 3.660702958004549,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:285 in h_amax: return ys.pop().amax(-1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS max_reduction: tensors requiring 64-bit indexing are not supported (numel=4294967296)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 33855907.0,
+    "loss2": 33855907.25,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     6.519925291999243,
+     6.536936415999662
+    ],
+    "mem_end": {
+     "current": 67108864,
+     "driver": 1074135040
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 0.0
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 0.0
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 33855907.0,
+     "ref2": 33855907.25,
+     "noise": 7.384235784910444e-09
+    },
+    "y_check": {
+     "n_units": 256,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 19.024110416998155
+  },
+  {
+   "name": "relation_n256_sum",
+   "product": "relation",
+   "size": 256,
+   "head": "sum",
+   "numel": 4294967296,
+   "over_2p32": 1.0,
+   "unit": "sequence",
+   "boundary_unit": null,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "correct",
+    "text": "ok: fwd and grads correct (exactly 2^32: head fwd raises first if the reduction check is numel >= 2^32)"
+   },
+   "mem_est": {
+    "Y_gb": 17.179869184,
+    "leaves_gb": 0.536870912,
+    "target_gb": 0.0,
+    "k_Y": 2,
+    "device_peak_gb": 35.433480192,
+    "setup_peak_gb": 1.073741824,
+    "host_grads_gb": 1.073741824
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 1.2045399160124362,
+    "copy_s": 0.02150491700740531,
+    "verify_s": 0.028635249997023493,
+    "product_s": 1.2388104170095176,
+    "fp_y_s": 2.5208350000029895
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 536870912,
+     "driver": 537280512
+    },
+    "after_forward": {
+     "current": 536870912,
+     "driver": 35979132928
+    },
+    "peak_sampled": 37044486144,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 3.7600416250061244,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:289 in h_sum: return ys.pop().sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4294967296)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 33559578.5,
+    "loss2": 33559579.0,
+    "pieces": [
+     8,
+     16
+    ],
+    "wall_s": [
+     6.348890291992575,
+     6.34754229200189
+    ],
+    "mem_end": {
+     "current": 67108864,
+     "driver": 1074135040
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 0.0
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 0.0
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 33559578.5,
+     "ref2": 33559579.0,
+     "noise": 1.4898876039220815e-08
+    },
+    "y_check": {
+     "n_units": 256,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 18.82344700000249
+  },
+  {
+   "name": "bmm_B65537_ce",
+   "product": "bmm",
+   "size": 65537,
+   "head": "ce",
+   "numel": 4295032832,
+   "over_2p32": 1.0000152587890625,
+   "unit": "batch",
+   "boundary_unit": 65536,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "grads wrong in batch 65536 only (rule 3 on G)",
+    "text": "fwd + loss correct; grads wrong in batch 65536 only (rule 3 on G)",
+    "note": "log_softmax (softmax family; softmax on > 2^32 elements was correct in inference) and nll_loss (reduces over rows = numel/C < 2^32): no reduction over > 2^32 elements in forward; backward (nll_loss_backward, _log_softmax_backward_data) unknown"
+   },
+   "mem_est": {
+    "Y_gb": 17.180131328,
+    "leaves_gb": 8.590065664,
+    "target_gb": 0.134219776,
+    "k_Y": 3,
+    "device_peak_gb": 68.854745088,
+    "setup_peak_gb": 17.44857088,
+    "host_grads_gb": 17.180131328
+   },
+   "status": "ok",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 21.066421541996533,
+    "copy_s": 0.3978976249927655,
+    "verify_s": 0.2660160000086762,
+    "product_s": 0.6009212499775458,
+    "fp_y_s": 2.371876916004112,
+    "head_s": 1.3114564579736907,
+    "forward_s": 4.284769874997437,
+    "g_fp_s": 2.6384105420147534,
+    "backward_s": 3.722809041995788
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 8996782080,
+     "driver": 9932521472
+    },
+    "after_forward": {
+     "current": 26713522688,
+     "driver": 63296651264
+    },
+    "after_backward": {
+     "current": 17855152384,
+     "driver": 80678141952
+    },
+    "peak_sampled": 81751883776,
+    "after_free": {
+     "current": 0,
+     "driver": 71696384
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "t": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 524288
+    }
+   },
+   "loss_full": 50680380.0,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 101371119.95996094,
+    "loss2": 101371121.95996094,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     27.801358208002057,
+     28.641905958007555
+    ],
+    "mem_end": {
+     "current": 131072,
+     "driver": 1093271552
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 7.40678031695739e-08,
+      "b": 6.878669095274079e-08
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 2.1918838220466818e-08
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": 50680380.0,
+     "ref": 101371119.95996094,
+     "ref2": 101371121.95996094,
+     "noise": 1.972948509190734e-08,
+     "rel_diff": 0.5000510991689006,
+     "tau": 1e-05,
+     "class": "wrong"
+    },
+    "y_check": {
+     "n_units": 65537,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": {
+     "n_units": 65537,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 2.407948465114336e-08,
+     "max_rel_ok_units": 2.407948465114336e-08,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       65536,
+       2.407948465114336e-08,
+       0.0
+      ],
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      2.407948465114336e-08
+     ]
+    },
+    "grads": {
+     "a": {
+      "rel_l2": 0.005450573491079342,
+      "cos": 0.9999851456217819,
+      "noise_rel_l2": 0.0,
+      "tau": 1e-06,
+      "nonfinite": 0,
+      "ref_norm": 11689.352145342493,
+      "class": "wrong",
+      "units": {
+       "n_units": 65537,
+       "n_wrong": 1,
+       "wrong_runs": [
+        [
+         65536,
+         65536
+        ]
+       ],
+       "max_rel": 1.408247679155928,
+       "max_rel_ok_units": 0.0,
+       "max_noise": 0.0,
+       "worst": [
+        [
+         65536,
+         1.408247679155928,
+         0.0
+        ],
+        [
+         0,
+         0.0,
+         0.0
+        ],
+        [
+         1,
+         0.0,
+         0.0
+        ],
+        [
+         2,
+         0.0,
+         0.0
+        ],
+        [
+         3,
+         0.0,
+         0.0
+        ]
+       ],
+       "tail_rel": [
+        0.0,
+        0.0,
+        1.408247679155928
+       ]
+      }
+     },
+     "b": {
+      "rel_l2": 0.005451723603458432,
+      "cos": 0.9999851393513172,
+      "noise_rel_l2": 0.0,
+      "tau": 1e-06,
+      "nonfinite": 0,
+      "ref_norm": 11690.791720003388,
+      "class": "wrong",
+      "units": {
+       "n_units": 65537,
+       "n_wrong": 1,
+       "wrong_runs": [
+        [
+         65536,
+         65536
+        ]
+       ],
+       "max_rel": 1.393810444897353,
+       "max_rel_ok_units": 0.0,
+       "max_noise": 0.0,
+       "worst": [
+        [
+         65536,
+         1.393810444897353,
+         0.0
+        ],
+        [
+         0,
+         0.0,
+         0.0
+        ],
+        [
+         1,
+         0.0,
+         0.0
+        ],
+        [
+         2,
+         0.0,
+         0.0
+        ],
+        [
+         3,
+         0.0,
+         0.0
+        ]
+       ],
+       "tail_rel": [
+        0.0,
+        0.0,
+        1.393810444897353
+       ]
+      }
+     }
+    }
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 89.58113312500063
+  },
+  {
+   "name": "bmm_B65537_kl_rows",
+   "product": "bmm",
+   "size": 65537,
+   "head": "kl_rows",
+   "numel": 4295032832,
+   "over_2p32": 1.0000152587890625,
+   "unit": "batch",
+   "boundary_unit": 65536,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "raised_forward",
+    "certain": false,
+    "grads": "grads wrong in batch 65536 only (rule 3 on G)",
+    "text": "head fwd may raise; else grads wrong in batch 65536 only (rule 3 on G)",
+    "note": "dim-wise sum over > 2^32 elements (the dim-wise all in _safe_softmax raised at numel 2^32 + 2^21)"
+   },
+   "mem_est": {
+    "Y_gb": 17.180131328,
+    "leaves_gb": 8.590065664,
+    "target_gb": 17.180131328,
+    "k_Y": 4,
+    "device_peak_gb": 103.080787968,
+    "setup_peak_gb": 51.540393984,
+    "host_grads_gb": 17.180131328
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 67.14202579201083,
+    "copy_s": 1.1357664590177592,
+    "verify_s": 0.7821685000089929,
+    "product_s": 0.5999215829942841,
+    "fp_y_s": 2.47587279198342
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 26575110144,
+     "driver": 26575503360
+    },
+    "after_forward": {
+     "current": 26575110144,
+     "driver": 80935796736
+    },
+    "peak_sampled": 80935796736,
+    "after_free": {
+     "current": 0,
+     "driver": 2490368
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "T": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 4096
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 3.3394328750146087,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:273 in h_kl_rows: return (T * (T.clamp_min(torch.finfo(T.dtype).tiny).log() - lp)).sum(-1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4295032832)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 16603540.653152466,
+    "loss2": 16603540.653152466,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     75.09848420901108,
+     76.42699179198826
+    ],
+    "mem_end": {
+     "current": 131072,
+     "driver": 1084882944
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 2.0773189061260535e-07,
+      "b": 1.910881768400848e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 1.9718882520550272e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 16603540.653152466,
+     "ref2": 16603540.653152466,
+     "noise": 0.0
+    },
+    "y_check": {
+     "n_units": 65537,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 226.9916793750017
+  },
+  {
+   "name": "bmm_B65537_kl_sum",
+   "product": "bmm",
+   "size": 65537,
+   "head": "kl_sum",
+   "numel": 4295032832,
+   "over_2p32": 1.0000152587890625,
+   "unit": "batch",
+   "boundary_unit": 65536,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "raised_forward",
+    "certain": true,
+    "grads": "grads wrong in batch 65536 only (rule 3 on G)",
+    "text": "head fwd raises; else grads wrong in batch 65536 only (rule 3 on G)",
+    "note": "full sum over > 2^32 elements inside kl_div (MPS sum_reduction raised for a full sum at numel 2^32 + 2^20)"
+   },
+   "mem_est": {
+    "Y_gb": 17.180131328,
+    "leaves_gb": 8.590065664,
+    "target_gb": 17.180131328,
+    "k_Y": 4,
+    "device_peak_gb": 103.080787968,
+    "setup_peak_gb": 51.540393984,
+    "host_grads_gb": 17.180131328
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 67.20661345799454,
+    "copy_s": 1.1442997500125784,
+    "verify_s": 0.7448701249959413,
+    "product_s": 0.5941732080245856,
+    "fp_y_s": 2.3204076669935603
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 26575110144,
+     "driver": 26575503360
+    },
+    "after_forward": {
+     "current": 26575110144,
+     "driver": 97587183616
+    },
+    "peak_sampled": 97587183616,
+    "after_free": {
+     "current": 0,
+     "driver": 2490368
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "T": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 4096
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 2.981859583000187,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:277 in h_kl_sum: return F.kl_div(F.log_softmax(ys.pop(), -1), T, reduction=\"sum\")",
+    "functional.py:3470 in kl_div: reduced = torch.kl_div(input, target, reduction_enum, log_target=log_target)"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4295032832)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 16603540.653152466,
+    "loss2": 16603540.778152466,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     75.08874562499113,
+     76.15537054199376
+    ],
+    "mem_end": {
+     "current": 131072,
+     "driver": 1084882944
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 2.0773189061260535e-07,
+      "b": 1.910881768400848e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 1.9718882520550272e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 16603540.653152466,
+     "ref2": 16603540.778152466,
+     "noise": 7.528514707269175e-09
+    },
+    "y_check": {
+     "n_units": 65537,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 227.14781408398994
+  },
+  {
+   "name": "bmm_B65537_lse",
+   "product": "bmm",
+   "size": 65537,
+   "head": "lse",
+   "numel": 4295032832,
+   "over_2p32": 1.0000152587890625,
+   "unit": "batch",
+   "boundary_unit": 65536,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "raised_forward",
+    "certain": false,
+    "grads": "grads wrong in batch 65536 only (rule 3 on G)",
+    "text": "head fwd may raise; else grads wrong in batch 65536 only (rule 3 on G)",
+    "note": "logsumexp: dim-wise amax and sum over > 2^32 elements"
+   },
+   "mem_est": {
+    "Y_gb": 17.180131328,
+    "leaves_gb": 8.590065664,
+    "target_gb": 0.0,
+    "k_Y": 4,
+    "device_peak_gb": 85.90065664,
+    "setup_peak_gb": 17.180131328,
+    "host_grads_gb": 17.180131328
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 20.844533416995546,
+    "copy_s": 0.3560052089742385,
+    "verify_s": 0.23968112500733696,
+    "product_s": 0.6025894999911543,
+    "fp_y_s": 2.335920208017342
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 8858370048,
+     "driver": 8858779648
+    },
+    "after_forward": {
+     "current": 8858370048,
+     "driver": 27649245184
+    },
+    "peak_sampled": 27649245184,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 2.9389220000011846,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:281 in h_lse: return torch.logsumexp(ys.pop(), -1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS max_reduction: tensors requiring 64-bit indexing are not supported (numel=4295032832)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 101374777.07128906,
+    "loss2": 101374777.07128906,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     27.72846116698929,
+     28.691492500016466
+    ],
+    "mem_end": {
+     "current": 131072,
+     "driver": 8781824
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 1.6345626256902914e-07,
+      "b": 1.287372549119925e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 1.1345180834522626e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 101374777.07128906,
+     "ref2": 101374777.07128906,
+     "noise": 0.0
+    },
+    "y_check": {
+     "n_units": 65537,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 81.75137866599835
+  },
+  {
+   "name": "bmm_B65537_amax",
+   "product": "bmm",
+   "size": 65537,
+   "head": "amax",
+   "numel": 4295032832,
+   "over_2p32": 1.0000152587890625,
+   "unit": "batch",
+   "boundary_unit": 65536,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "raised_forward",
+    "certain": false,
+    "grads": "grads wrong in batch 65536 only (rule 3 on G)",
+    "text": "head fwd may raise; else grads wrong in batch 65536 only (rule 3 on G)",
+    "note": "dim-wise amax over > 2^32 elements; its backward counts ties with a dim-wise sum"
+   },
+   "mem_est": {
+    "Y_gb": 17.180131328,
+    "leaves_gb": 8.590065664,
+    "target_gb": 0.0,
+    "k_Y": 3,
+    "device_peak_gb": 68.720525312,
+    "setup_peak_gb": 17.180131328,
+    "host_grads_gb": 17.180131328
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 20.71154854199267,
+    "copy_s": 0.36679295799694955,
+    "verify_s": 0.253161792003084,
+    "product_s": 0.6024517079931684,
+    "fp_y_s": 2.310376167006325
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 8858370048,
+     "driver": 8858779648
+    },
+    "after_forward": {
+     "current": 8858370048,
+     "driver": 27649245184
+    },
+    "peak_sampled": 27649245184,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 2.913227792014368,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:285 in h_amax: return ys.pop().amax(-1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS max_reduction: tensors requiring 64-bit indexing are not supported (numel=4295032832)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 47252282.29364014,
+    "loss2": 47252282.04364014,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     27.25500316702528,
+     28.31219562498154
+    ],
+    "mem_end": {
+     "current": 131072,
+     "driver": 8781824
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 0.0,
+      "b": 0.0
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 0.0
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 47252282.29364014,
+     "ref2": 47252282.04364014,
+     "noise": 5.290749734508558e-09
+    },
+    "y_check": {
+     "n_units": 65537,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 80.77848700000322
+  },
+  {
+   "name": "bmm_B65537_sum",
+   "product": "bmm",
+   "size": 65537,
+   "head": "sum",
+   "numel": 4295032832,
+   "over_2p32": 1.0000152587890625,
+   "unit": "batch",
+   "boundary_unit": 65536,
+   "chunk": 8192,
+   "chunk2": 4096,
+   "predicted": {
+    "status": "raised_forward",
+    "certain": true,
+    "grads": "grads wrong in batch 65536 only (rule 3 on G)",
+    "text": "head fwd raises; else bwd raises (rule 2 on the stride-0 G)",
+    "note": "full sum over > 2^32 elements; if passed, the backward G is expand(ones), a stride-0 view with > 2^31 elements: bmm -> rule 2 (raise); relation: the /sqrt(d) backward materializes G -> rule 3"
+   },
+   "mem_est": {
+    "Y_gb": 17.180131328,
+    "leaves_gb": 8.590065664,
+    "target_gb": 0.0,
+    "k_Y": 1,
+    "device_peak_gb": 34.360262656,
+    "setup_peak_gb": 17.180131328,
+    "host_grads_gb": 17.180131328
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 20.779643125017174,
+    "copy_s": 0.3646821249858476,
+    "verify_s": 0.2527579999878071,
+    "product_s": 0.6007102080038749,
+    "fp_y_s": 2.300156290992163
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 8858370048,
+     "driver": 8858779648
+    },
+    "after_forward": {
+     "current": 8858370048,
+     "driver": 26583891968
+    },
+    "peak_sampled": 27649245184,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "a": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    },
+    "b": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16384
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 2.9012165000021923,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:289 in h_sum: return ys.pop().sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4295032832)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 8192,
+    "chunk2": 4096,
+    "loss": 2039770.5995483398,
+    "loss2": 2039770.5995483398,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     27.12237162500969,
+     27.973563292005565
+    ],
+    "mem_end": {
+     "current": 131072,
+     "driver": 2158362624
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "a": 0.0,
+      "b": 0.0
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 0.0
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 2039770.5995483398,
+     "ref2": 2039770.5995483398,
+     "noise": 0.0
+    },
+    "y_check": {
+     "n_units": 65537,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 80.40674970898544
+  },
+  {
+   "name": "relation_n257_ce",
+   "product": "relation",
+   "size": 257,
+   "head": "ce",
+   "numel": 4311744512,
+   "over_2p32": 1.00390625,
+   "unit": "sequence",
+   "boundary_unit": 256,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "ok",
+    "certain": true,
+    "grads": "grads wrong in sequence 256 only (rule 3 on G)",
+    "text": "fwd + loss correct; grads wrong in sequence 256 only (rule 3 on G)",
+    "note": "log_softmax (softmax family; softmax on > 2^32 elements was correct in inference) and nll_loss (reduces over rows = numel/C < 2^32): no reduction over > 2^32 elements in forward; backward (nll_loss_backward, _log_softmax_backward_data) unknown"
+   },
+   "mem_est": {
+    "Y_gb": 17.246978048,
+    "leaves_gb": 0.538968064,
+    "target_gb": 0.067371008,
+    "k_Y": 3,
+    "device_peak_gb": 52.88624128,
+    "setup_peak_gb": 1.212678144,
+    "host_grads_gb": 1.077936128
+   },
+   "status": "ok",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 1.2346805830020458,
+    "copy_s": 0.04825066699413583,
+    "verify_s": 0.034230208984808996,
+    "product_s": 1.2979255000245757,
+    "fp_y_s": 2.45736545798718,
+    "head_s": 0.8672914170019794,
+    "forward_s": 4.623040790989762,
+    "g_fp_s": 2.521964332991047,
+    "backward_s": 3.4610541249858215
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 622854144,
+     "driver": 1627799552
+    },
+    "after_forward": {
+     "current": 19446891008,
+     "driver": 55445159936
+    },
+    "after_backward": {
+     "current": 1176502528,
+     "driver": 72793194496
+    },
+    "peak_sampled": 73866936320,
+    "after_free": {
+     "current": 0,
+     "driver": 38141952
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    },
+    "t": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 4096
+    }
+   },
+   "loss_full": 28917318.0,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 57719755.28125,
+    "loss2": 57719754.53125,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     6.8153707919991575,
+     6.591261291992851
+    ],
+    "mem_end": {
+     "current": 4194304,
+     "driver": 2221539328
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 9.664088917187801e-08
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 2.860821009167599e-08
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": 28917318.0,
+     "ref": 57719755.28125,
+     "ref2": 57719754.53125,
+     "noise": 1.2993818084388761e-08,
+     "rel_diff": 0.4990048405594391,
+     "tau": 1e-05,
+     "class": "wrong"
+    },
+    "y_check": {
+     "n_units": 257,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": {
+     "n_units": 257,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "grads": {
+     "x": {
+      "rel_l2": 0.0814148098430983,
+      "cos": 0.996684635344156,
+      "noise_rel_l2": 0.0,
+      "tau": 1e-06,
+      "nonfinite": 0,
+      "ref_norm": 4699.860606843922,
+      "class": "wrong",
+      "units": {
+       "n_units": 257,
+       "n_wrong": 1,
+       "wrong_runs": [
+        [
+         256,
+         256
+        ]
+       ],
+       "max_rel": 1.3014690972687024,
+       "max_rel_ok_units": 0.0,
+       "max_noise": 0.0,
+       "worst": [
+        [
+         256,
+         1.3014690972687024,
+         0.0
+        ],
+        [
+         0,
+         0.0,
+         0.0
+        ],
+        [
+         1,
+         0.0,
+         0.0
+        ],
+        [
+         2,
+         0.0,
+         0.0
+        ],
+        [
+         3,
+         0.0,
+         0.0
+        ]
+       ],
+       "tail_rel": [
+        0.0,
+        0.0,
+        1.3014690972687024
+       ]
+      }
+     }
+    }
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 24.34855725002126
+  },
+  {
+   "name": "relation_n257_kl_rows",
+   "product": "relation",
+   "size": 257,
+   "head": "kl_rows",
+   "numel": 4311744512,
+   "over_2p32": 1.00390625,
+   "unit": "sequence",
+   "boundary_unit": 256,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "raised_forward",
+    "certain": false,
+    "grads": "grads wrong in sequence 256 only (rule 3 on G)",
+    "text": "head fwd may raise; else grads wrong in sequence 256 only (rule 3 on G)",
+    "note": "dim-wise sum over > 2^32 elements (the dim-wise all in _safe_softmax raised at numel 2^32 + 2^21)"
+   },
+   "mem_est": {
+    "Y_gb": 17.246978048,
+    "leaves_gb": 0.538968064,
+    "target_gb": 17.246978048,
+    "k_Y": 4,
+    "device_peak_gb": 87.312826368,
+    "setup_peak_gb": 35.571892224,
+    "host_grads_gb": 1.077936128
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 42.33984133298509,
+    "copy_s": 0.7545159169822,
+    "verify_s": 0.5385750410205219,
+    "product_s": 1.2941533749981318,
+    "fp_y_s": 2.427256249997299
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 18270388224,
+     "driver": 18270781440
+    },
+    "after_forward": {
+     "current": 18270388224,
+     "driver": 73671507968
+    },
+    "peak_sampled": 73671507968,
+    "after_free": {
+     "current": 0,
+     "driver": 2490368
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    },
+    "T": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 3.929597125010332,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:273 in h_kl_rows: return (T * (T.clamp_min(torch.finfo(T.dtype).tiny).log() - lp)).sum(-1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4311744512)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 9367838.5546875,
+    "loss2": 9367838.6796875,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     48.00036341699888,
+     47.577581541991094
+    ],
+    "mem_end": {
+     "current": 4194304,
+     "driver": 2215247872
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 1.7228045302616057e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 1.5745415648070955e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 9367838.5546875,
+     "ref2": 9367838.6796875,
+     "noise": 1.3343526286269336e-08
+    },
+    "y_check": {
+     "n_units": 257,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 146.35198795801261
+  },
+  {
+   "name": "relation_n257_kl_sum",
+   "product": "relation",
+   "size": 257,
+   "head": "kl_sum",
+   "numel": 4311744512,
+   "over_2p32": 1.00390625,
+   "unit": "sequence",
+   "boundary_unit": 256,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "raised_forward",
+    "certain": true,
+    "grads": "grads wrong in sequence 256 only (rule 3 on G)",
+    "text": "head fwd raises; else grads wrong in sequence 256 only (rule 3 on G)",
+    "note": "full sum over > 2^32 elements inside kl_div (MPS sum_reduction raised for a full sum at numel 2^32 + 2^20)"
+   },
+   "mem_est": {
+    "Y_gb": 17.246978048,
+    "leaves_gb": 0.538968064,
+    "target_gb": 17.246978048,
+    "k_Y": 4,
+    "device_peak_gb": 87.312826368,
+    "setup_peak_gb": 35.571892224,
+    "host_grads_gb": 1.077936128
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 42.31679312500637,
+    "copy_s": 0.753890042018611,
+    "verify_s": 0.5449477499932982,
+    "product_s": 1.3280080409895163,
+    "fp_y_s": 2.446580166986678
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 18270388224,
+     "driver": 18270781440
+    },
+    "after_forward": {
+     "current": 18270388224,
+     "driver": 90322894848
+    },
+    "peak_sampled": 90322894848,
+    "after_free": {
+     "current": 0,
+     "driver": 2490368
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    },
+    "T": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 16
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 3.784151291998569,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:277 in h_kl_sum: return F.kl_div(F.log_softmax(ys.pop(), -1), T, reduction=\"sum\")",
+    "functional.py:3470 in kl_div: reduced = torch.kl_div(input, target, reduction_enum, log_target=log_target)"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4311744512)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 9367838.3046875,
+    "loss2": 9367838.7421875,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     48.14055887499126,
+     47.79271933299606
+    ],
+    "mem_end": {
+     "current": 4194304,
+     "driver": 2215247872
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 1.7228045302616057e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 1.5745415648070955e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 9367838.3046875,
+     "ref2": 9367838.7421875,
+     "noise": 4.6702343248290566e-08
+    },
+    "y_check": {
+     "n_units": 257,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 147.15700104198186
+  },
+  {
+   "name": "relation_n257_lse",
+   "product": "relation",
+   "size": 257,
+   "head": "lse",
+   "numel": 4311744512,
+   "over_2p32": 1.00390625,
+   "unit": "sequence",
+   "boundary_unit": 256,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "raised_forward",
+    "certain": false,
+    "grads": "grads wrong in sequence 256 only (rule 3 on G)",
+    "text": "head fwd may raise; else grads wrong in sequence 256 only (rule 3 on G)",
+    "note": "logsumexp: dim-wise amax and sum over > 2^32 elements"
+   },
+   "mem_est": {
+    "Y_gb": 17.246978048,
+    "leaves_gb": 0.538968064,
+    "target_gb": 0.0,
+    "k_Y": 4,
+    "device_peak_gb": 70.06584832,
+    "setup_peak_gb": 1.077936128,
+    "host_grads_gb": 1.077936128
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 1.2143144170113374,
+    "copy_s": 0.022235125012230128,
+    "verify_s": 0.029274708009324968,
+    "product_s": 1.3219190000090748,
+    "fp_y_s": 2.4876970000041183
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 553648128,
+     "driver": 554057728
+    },
+    "after_forward": {
+     "current": 553648128,
+     "driver": 37094817792
+    },
+    "peak_sampled": 38168559616,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 3.809995457995683,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:281 in h_lse: return torch.logsumexp(ys.pop(), -1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS max_reduction: tensors requiring 64-bit indexing are not supported (numel=4311744512)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 57788047.234375,
+    "loss2": 57788046.984375,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     6.958405375014991,
+     6.780017874989426
+    ],
+    "mem_end": {
+     "current": 4194304,
+     "driver": 1074135040
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 1.6384543241694183e-07
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 2.9520538373456787e-07
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 57788047.234375,
+     "ref2": 57788046.984375,
+     "noise": 4.32615414371172e-09
+    },
+    "y_check": {
+     "n_units": 257,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 19.909259334002854
+  },
+  {
+   "name": "relation_n257_amax",
+   "product": "relation",
+   "size": 257,
+   "head": "amax",
+   "numel": 4311744512,
+   "over_2p32": 1.00390625,
+   "unit": "sequence",
+   "boundary_unit": 256,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "raised_forward",
+    "certain": false,
+    "grads": "grads wrong in sequence 256 only (rule 3 on G)",
+    "text": "head fwd may raise; else grads wrong in sequence 256 only (rule 3 on G)",
+    "note": "dim-wise amax over > 2^32 elements; its backward counts ties with a dim-wise sum"
+   },
+   "mem_est": {
+    "Y_gb": 17.246978048,
+    "leaves_gb": 0.538968064,
+    "target_gb": 0.0,
+    "k_Y": 3,
+    "device_peak_gb": 52.818870272,
+    "setup_peak_gb": 1.077936128,
+    "host_grads_gb": 1.077936128
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 1.2205886250012554,
+    "copy_s": 0.02196962499874644,
+    "verify_s": 0.029489667009329423,
+    "product_s": 1.316827833012212,
+    "fp_y_s": 2.4855957080144435
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 553648128,
+     "driver": 554057728
+    },
+    "after_forward": {
+     "current": 553648128,
+     "driver": 37094817792
+    },
+    "peak_sampled": 38168559616,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 3.802814082999248,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:285 in h_amax: return ys.pop().amax(-1).sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS max_reduction: tensors requiring 64-bit indexing are not supported (numel=4311744512)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 33988489.875,
+    "loss2": 33988490.125,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     6.575037665985292,
+     6.55965937502333
+    ],
+    "mem_end": {
+     "current": 4194304,
+     "driver": 1074135040
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 0.0
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 0.0
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 33988489.875,
+     "ref2": 33988490.125,
+     "noise": 7.355431233321307e-09
+    },
+    "y_check": {
+     "n_units": 257,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 19.27698362499359
+  },
+  {
+   "name": "relation_n257_sum",
+   "product": "relation",
+   "size": 257,
+   "head": "sum",
+   "numel": 4311744512,
+   "over_2p32": 1.00390625,
+   "unit": "sequence",
+   "boundary_unit": 256,
+   "chunk": 32,
+   "chunk2": 16,
+   "predicted": {
+    "status": "raised_forward",
+    "certain": true,
+    "grads": "grads wrong in sequence 256 only (rule 3 on G)",
+    "text": "head fwd raises; else grads wrong in sequence 256 only (rule 3 on G)",
+    "note": "full sum over > 2^32 elements; if passed, the backward G is expand(ones), a stride-0 view with > 2^31 elements: bmm -> rule 2 (raise); relation: the /sqrt(d) backward materializes G -> rule 3"
+   },
+   "mem_est": {
+    "Y_gb": 17.246978048,
+    "leaves_gb": 0.538968064,
+    "target_gb": 0.0,
+    "k_Y": 2,
+    "device_peak_gb": 35.571892224,
+    "setup_peak_gb": 1.077936128,
+    "host_grads_gb": 1.077936128
+   },
+   "status": "raised_forward",
+   "stage": "done",
+   "debug": null,
+   "times": {
+    "make_s": 1.2256327500217594,
+    "copy_s": 0.022002500016242266,
+    "verify_s": 0.029898749984567985,
+    "product_s": 1.3201848749886267,
+    "fp_y_s": 2.5154653750068974
+   },
+   "mem": {
+    "start": {
+     "current": 0,
+     "driver": 393216
+    },
+    "after_setup": {
+     "current": 553648128,
+     "driver": 554057728
+    },
+    "after_forward": {
+     "current": 553648128,
+     "driver": 37103206400
+    },
+    "peak_sampled": 38168559616,
+    "after_free": {
+     "current": 0,
+     "driver": 393216
+    }
+   },
+   "recommended_max_memory": 173173080064,
+   "inputs_verified": {
+    "x": {
+     "ok": true,
+     "bad_block_starts": [],
+     "block_units": 512
+    }
+   },
+   "raised_in": "head",
+   "forward_s_until_error": 3.8361097080050968,
+   "frames": [
+    "probe_bwd_heads.py:579 in job_case: box[\"loss\"] = forward(sp, head, lv, tgt, w, st, dbg)",
+    "probe_bwd_heads.py:459 in forward: loss = HEAD_FN[head](ys, tgt)",
+    "probe_bwd_heads.py:289 in h_sum: return ys.pop().sum()"
+   ],
+   "exception_type": "NotImplementedError",
+   "exception_msg": "MPS sum_reduction: tensors requiring 64-bit indexing are not supported (numel=4311744512)",
+   "oom": false,
+   "anomaly": null,
+   "other_warnings": [],
+   "ref": {
+    "status": "ok",
+    "chunk": 32,
+    "chunk2": 16,
+    "loss": 33698397.453125,
+    "loss2": 33698397.953125,
+    "pieces": [
+     9,
+     17
+    ],
+    "wall_s": [
+     6.461886625009356,
+     6.360228958015796
+    ],
+    "mem_end": {
+     "current": 4194304,
+     "driver": 1074135040
+    },
+    "vs_cpu": {
+     "units": 2,
+     "grad_rel_l2": {
+      "x": 0.0
+     },
+     "y_rel_max": 0.0,
+     "g_rel_max": 0.0
+    }
+   },
+   "metrics": {
+    "loss": {
+     "full": null,
+     "ref": 33698397.453125,
+     "ref2": 33698397.953125,
+     "noise": 1.4837500824646271e-08
+    },
+    "y_check": {
+     "n_units": 257,
+     "n_wrong": 0,
+     "wrong_runs": [],
+     "max_rel": 0.0,
+     "max_rel_ok_units": 0.0,
+     "max_noise": 0.0,
+     "worst": [
+      [
+       0,
+       0.0,
+       0.0
+      ],
+      [
+       1,
+       0.0,
+       0.0
+      ],
+      [
+       2,
+       0.0,
+       0.0
+      ],
+      [
+       3,
+       0.0,
+       0.0
+      ],
+      [
+       4,
+       0.0,
+       0.0
+      ]
+     ],
+     "tail_rel": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "g_check": null,
+    "grads": null
+   },
+   "child_exit_code": 0,
+   "child_wall_s": 19.020510000002105
+  }
+ ],
+ "dispatch": {
+  "status": "ok",
+  "ops": {
+   "bmm": {
+    "ce": {
+     "product": {
+      "aten.bmm.default": 1
+     },
+     "head": {
+      "aten.view.default": 1,
+      "aten._log_softmax.default": 1,
+      "aten.detach.default": 1,
+      "aten.nll_loss_forward.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.nll_loss_backward.default": 1,
+      "aten.detach.default": 3,
+      "aten._log_softmax_backward_data.default": 1,
+      "aten.view.default": 1,
+      "aten.transpose.int": 2,
+      "aten.bmm.default": 2
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          64,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          1,
+          64
+         ],
+         "contiguous": false,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          65536,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 131072
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          65536,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 131072
+        },
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          1,
+          256
+         ],
+         "contiguous": false,
+         "numel": 32768
+        }
+       ]
+      }
+     ]
+    },
+    "kl_rows": {
+     "product": {
+      "aten.bmm.default": 1
+     },
+     "head": {
+      "aten._log_softmax.default": 1,
+      "aten.detach.default": 1,
+      "aten.clamp_min.default": 1,
+      "aten.log.default": 1,
+      "aten.sub.Tensor": 1,
+      "aten.mul.Tensor": 1,
+      "aten.sum.dim_IntList": 1,
+      "aten.sum.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.expand.default": 2,
+      "aten.unsqueeze.default": 1,
+      "aten.mul.Tensor": 1,
+      "aten.neg.default": 1,
+      "aten.detach.default": 3,
+      "aten._log_softmax_backward_data.default": 1,
+      "aten.transpose.int": 2,
+      "aten.bmm.default": 2
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          64,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          1,
+          64
+         ],
+         "contiguous": false,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          65536,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 131072
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          65536,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 131072
+        },
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          1,
+          256
+         ],
+         "contiguous": false,
+         "numel": 32768
+        }
+       ]
+      }
+     ]
+    },
+    "kl_sum": {
+     "product": {
+      "aten.bmm.default": 1
+     },
+     "head": {
+      "aten._log_softmax.default": 1,
+      "aten.detach.default": 1,
+      "aten.xlogy.Tensor": 1,
+      "aten.mul.Tensor": 1,
+      "aten.sub.Tensor": 1,
+      "aten.sum.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.expand.default": 1,
+      "aten.neg.default": 1,
+      "aten.mul.Tensor": 1,
+      "aten.detach.default": 3,
+      "aten._log_softmax_backward_data.default": 1,
+      "aten.transpose.int": 2,
+      "aten.bmm.default": 2
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          64,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          1,
+          64
+         ],
+         "contiguous": false,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          65536,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 131072
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          65536,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 131072
+        },
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          1,
+          256
+         ],
+         "contiguous": false,
+         "numel": 32768
+        }
+       ]
+      }
+     ]
+    },
+    "lse": {
+     "product": {
+      "aten.bmm.default": 1
+     },
+     "head": {
+      "aten.logsumexp.default": 1,
+      "aten.detach.default": 1,
+      "aten.sum.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.expand.default": 1,
+      "aten.detach.default": 3,
+      "aten.unsqueeze.default": 2,
+      "aten.sub.Tensor": 1,
+      "aten.exp.default": 1,
+      "aten.mul.Tensor": 1,
+      "aten.transpose.int": 2,
+      "aten.bmm.default": 2
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          64,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          1,
+          64
+         ],
+         "contiguous": false,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          65536,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 131072
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          65536,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 131072
+        },
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          1,
+          256
+         ],
+         "contiguous": false,
+         "numel": 32768
+        }
+       ]
+      }
+     ]
+    },
+    "amax": {
+     "product": {
+      "aten.bmm.default": 1
+     },
+     "head": {
+      "aten.amax.default": 1,
+      "aten.detach.default": 1,
+      "aten.sum.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.expand.default": 1,
+      "aten.detach.default": 3,
+      "aten.view.default": 2,
+      "aten.eq.Tensor": 1,
+      "aten.sum.dim_IntList": 1,
+      "aten.div.Tensor": 1,
+      "aten.mul.Tensor": 1,
+      "aten.transpose.int": 2,
+      "aten.bmm.default": 2
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          64,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          1,
+          64
+         ],
+         "contiguous": false,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          65536,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 131072
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          65536,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 131072
+        },
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          1,
+          256
+         ],
+         "contiguous": false,
+         "numel": 32768
+        }
+       ]
+      }
+     ]
+    },
+    "sum": {
+     "product": {
+      "aten.bmm.default": 1
+     },
+     "head": {
+      "aten.sum.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.expand.default": 1,
+      "aten.transpose.int": 2,
+      "aten.bmm.default": 2,
+      "aten.detach.default": 2
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          64,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          256,
+          1
+         ],
+         "contiguous": true,
+         "numel": 32768
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          64,
+          256
+         ],
+         "stride": [
+          16384,
+          1,
+          64
+         ],
+         "contiguous": false,
+         "numel": 32768
+        },
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          0,
+          0,
+          0
+         ],
+         "contiguous": false,
+         "numel": 131072
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          2,
+          256,
+          256
+         ],
+         "stride": [
+          0,
+          0,
+          0
+         ],
+         "contiguous": false,
+         "numel": 131072
+        },
+        {
+         "shape": [
+          2,
+          256,
+          64
+         ],
+         "stride": [
+          16384,
+          1,
+          256
+         ],
+         "contiguous": false,
+         "numel": 32768
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "relation": {
+    "ce": {
+     "product": {
+      "aten.view.default": 1,
+      "aten.transpose.int": 2,
+      "aten.expand.default": 2,
+      "aten.clone.default": 2,
+      "aten._unsafe_view.default": 3,
+      "aten.bmm.default": 1,
+      "aten.div.Tensor": 1
+     },
+     "head": {
+      "aten.view.default": 1,
+      "aten._log_softmax.default": 1,
+      "aten.detach.default": 1,
+      "aten.nll_loss_forward.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.nll_loss_backward.default": 1,
+      "aten.detach.default": 2,
+      "aten._log_softmax_backward_data.default": 1,
+      "aten.view.default": 4,
+      "aten.div.Tensor": 1,
+      "aten.transpose.int": 4,
+      "aten.bmm.default": 2,
+      "aten.add.Tensor": 1,
+      "aten.clone.default": 1,
+      "aten._unsafe_view.default": 1
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          16,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          1,
+          16
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        },
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          1,
+          512
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        }
+       ]
+      }
+     ]
+    },
+    "kl_rows": {
+     "product": {
+      "aten.view.default": 1,
+      "aten.transpose.int": 2,
+      "aten.expand.default": 2,
+      "aten.clone.default": 2,
+      "aten._unsafe_view.default": 3,
+      "aten.bmm.default": 1,
+      "aten.div.Tensor": 1
+     },
+     "head": {
+      "aten._log_softmax.default": 1,
+      "aten.detach.default": 1,
+      "aten.clamp_min.default": 1,
+      "aten.log.default": 1,
+      "aten.sub.Tensor": 1,
+      "aten.mul.Tensor": 1,
+      "aten.sum.dim_IntList": 1,
+      "aten.sum.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.expand.default": 2,
+      "aten.unsqueeze.default": 1,
+      "aten.mul.Tensor": 1,
+      "aten.neg.default": 1,
+      "aten.detach.default": 2,
+      "aten._log_softmax_backward_data.default": 1,
+      "aten.div.Tensor": 1,
+      "aten.view.default": 3,
+      "aten.transpose.int": 4,
+      "aten.bmm.default": 2,
+      "aten.add.Tensor": 1,
+      "aten.clone.default": 1,
+      "aten._unsafe_view.default": 1
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          16,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          1,
+          16
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        },
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          1,
+          512
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        }
+       ]
+      }
+     ]
+    },
+    "kl_sum": {
+     "product": {
+      "aten.view.default": 1,
+      "aten.transpose.int": 2,
+      "aten.expand.default": 2,
+      "aten.clone.default": 2,
+      "aten._unsafe_view.default": 3,
+      "aten.bmm.default": 1,
+      "aten.div.Tensor": 1
+     },
+     "head": {
+      "aten._log_softmax.default": 1,
+      "aten.detach.default": 1,
+      "aten.xlogy.Tensor": 1,
+      "aten.mul.Tensor": 1,
+      "aten.sub.Tensor": 1,
+      "aten.sum.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.expand.default": 1,
+      "aten.neg.default": 1,
+      "aten.mul.Tensor": 1,
+      "aten.detach.default": 2,
+      "aten._log_softmax_backward_data.default": 1,
+      "aten.div.Tensor": 1,
+      "aten.view.default": 3,
+      "aten.transpose.int": 4,
+      "aten.bmm.default": 2,
+      "aten.add.Tensor": 1,
+      "aten.clone.default": 1,
+      "aten._unsafe_view.default": 1
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          16,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          1,
+          16
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        },
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          1,
+          512
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        }
+       ]
+      }
+     ]
+    },
+    "lse": {
+     "product": {
+      "aten.view.default": 1,
+      "aten.transpose.int": 2,
+      "aten.expand.default": 2,
+      "aten.clone.default": 2,
+      "aten._unsafe_view.default": 3,
+      "aten.bmm.default": 1,
+      "aten.div.Tensor": 1
+     },
+     "head": {
+      "aten.logsumexp.default": 1,
+      "aten.detach.default": 1,
+      "aten.sum.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.expand.default": 1,
+      "aten.detach.default": 2,
+      "aten.unsqueeze.default": 2,
+      "aten.sub.Tensor": 1,
+      "aten.exp.default": 1,
+      "aten.mul.Tensor": 1,
+      "aten.div.Tensor": 1,
+      "aten.view.default": 3,
+      "aten.transpose.int": 4,
+      "aten.bmm.default": 2,
+      "aten.add.Tensor": 1,
+      "aten.clone.default": 1,
+      "aten._unsafe_view.default": 1
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          16,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          1,
+          16
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        },
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          1,
+          512
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        }
+       ]
+      }
+     ]
+    },
+    "amax": {
+     "product": {
+      "aten.view.default": 1,
+      "aten.transpose.int": 2,
+      "aten.expand.default": 2,
+      "aten.clone.default": 2,
+      "aten._unsafe_view.default": 3,
+      "aten.bmm.default": 1,
+      "aten.div.Tensor": 1
+     },
+     "head": {
+      "aten.amax.default": 1,
+      "aten.detach.default": 1,
+      "aten.sum.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.expand.default": 1,
+      "aten.detach.default": 2,
+      "aten.view.default": 5,
+      "aten.eq.Tensor": 1,
+      "aten.sum.dim_IntList": 1,
+      "aten.div.Tensor": 2,
+      "aten.mul.Tensor": 1,
+      "aten.transpose.int": 4,
+      "aten.bmm.default": 2,
+      "aten.add.Tensor": 1,
+      "aten.clone.default": 1,
+      "aten._unsafe_view.default": 1
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          16,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          1,
+          16
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        },
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          1,
+          512
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        }
+       ]
+      }
+     ]
+    },
+    "sum": {
+     "product": {
+      "aten.view.default": 1,
+      "aten.transpose.int": 2,
+      "aten.expand.default": 2,
+      "aten.clone.default": 2,
+      "aten._unsafe_view.default": 3,
+      "aten.bmm.default": 1,
+      "aten.div.Tensor": 1
+     },
+     "head": {
+      "aten.sum.default": 1
+     },
+     "backward": {
+      "aten.ones_like.default": 1,
+      "aten.expand.default": 1,
+      "aten.div.Tensor": 1,
+      "aten.view.default": 3,
+      "aten.transpose.int": 4,
+      "aten.bmm.default": 2,
+      "aten.add.Tensor": 1,
+      "aten.clone.default": 1,
+      "aten._unsafe_view.default": 1,
+      "aten.detach.default": 1
+     },
+     "mm": [
+      {
+       "phase": "product",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          16,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 1048576
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          16,
+          512
+         ],
+         "stride": [
+          8192,
+          1,
+          16
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        },
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        }
+       ]
+      },
+      {
+       "phase": "backward",
+       "op": "aten.bmm.default",
+       "args": [
+        {
+         "shape": [
+          128,
+          512,
+          512
+         ],
+         "stride": [
+          262144,
+          512,
+          1
+         ],
+         "contiguous": true,
+         "numel": 33554432
+        },
+        {
+         "shape": [
+          128,
+          512,
+          16
+         ],
+         "stride": [
+          8192,
+          1,
+          512
+         ],
+         "contiguous": false,
+         "numel": 1048576
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "child_exit_code": 0,
+  "child_wall_s": 4.723994958010735
+ },
+ "total_wall_s": 2310.702972875006
+}

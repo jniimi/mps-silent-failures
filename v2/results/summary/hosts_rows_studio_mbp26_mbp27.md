@@ -33,6 +33,7 @@
 | studio | all-256 supplement 2.14.0 | e0fe34d7 | 20260920T135650-studio | done | Mac14,14 / Apple M2 Ultra / macOS 27.0 (26A428) | 2.14.0 | 36 | 6 | 0 | 30 | WRONG 24, ok 12 | 2e2e28a | abcd1fbb8854 / a264baa58030 |
 | studio | far points 2.14.0 | 46f0408b | 20260920T132549-studio | done | Mac14,14 / Apple M2 Ultra / macOS 27.0 (26A428) | 2.14.0 | 124 | 12 | 0 | 112 | WRONG 32, err 40, ok 52 | 2e2e28a | abcd1fbb8854 / a264baa58030 |
 | studio | offset 2.14.0 | e12f206c | 20260920T132133-studio | done | Mac14,14 / Apple M2 Ultra / macOS 27.0 (26A428) | 2.14.0 | 104 | 12 | 0 | 92 | ok 104 | 2e2e28a | abcd1fbb8854 / a264baa58030 |
+| studio | boundary inside a batch 2.14.0 | 960209ac | 20260924T005506-studio | done | Mac14,14 / Apple M2 Ultra / macOS 27.0 (26A428) | 2.14.0 | 30 | 6 | 0 | 24 | WRONG 6, err 4, ok 20 | f00e977 | ccec78cc14c2 / c51f00cdd8ba |
 | mbp-macos26 | main sweep 2.14.0 | 50429b85 | 20260920T110142-mbp-macos26 | done | Mac14,6 / Apple M2 Max / macOS 26.6.2 (25G83) | 2.14.0 | 1596 | 24 | 0 | 1572 | WRONG 97, err 214, ok 1285 | ed941f3 | abcd1fbb8854 / a264baa58030 |
 | mbp-macos26 | reduced sweep 2.4.1 | bc628586 | 20260920T145220-mbp-macos26 | done | Mac14,6 / Apple M2 Max / macOS 26.6.2 (25G83) | 2.4.1 | 360 | 12 | 0 | 348 | TRUNC 16, WRONG 40, ok 304 | ed941f3 | abcd1fbb8854 / a264baa58030 |
 | mbp-macos26 | reduced sweep 2.5.1 | cf1c2f70 | 20260920T193350-mbp-macos26 | done | Mac14,6 / Apple M2 Max / macOS 26.6.2 (25G83) | 2.5.1 | 374 | 12 | 0 | 362 | CRASH 40, WRONG 42, err 10, ok 282 | ed941f3 | abcd1fbb8854 / a264baa58030 |
@@ -153,7 +154,8 @@ A = 組の左、B = 組の右。manifest = その系列の run の sha_scan / sh
 ## 使わなかった run、対応のない系列
 
 - 使わなかった run: なし
-- 対応のない系列: なし
+- studio vs mbp-macos26: studio にしかない系列 boundary inside a batch 2.14.0(sig 960209ac、20260924T005506-studio、24 点、shape in-250x250x64, out-250x64x250、レイアウト aT, bT, contig, slice)
+- studio vs mbp-macos27: studio にしかない系列 boundary inside a batch 2.14.0(sig 960209ac、20260924T005506-studio、24 点、shape in-250x250x64, out-250x64x250、レイアウト aT, bT, contig, slice)
 
 ## まとめ
 

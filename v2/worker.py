@@ -24,7 +24,10 @@ scan.py から 1 実行ごとに別プロセスで起動される(Metal 側の a
     (out[i,m,n] = b[i, m mod K, n])、idx_a なら b[k,n] = [k == n mod K](out[i,m,n] = a[i, m, n mod K])。
     積は厳密なので、誤った出力要素の値から「実際に読まれた (バッチ | 行, 列)」を逆算できる
 - 誤答したバッチについて、読み違いの仮説(転置 view の stride 無視、2**32 要素での巻き戻り、storage_offset 無視)
-  ごとに出力を CPU で再現し、誤答要素のうち仮説と一致する割合を記録する
+  ごとに出力を CPU で再現し、誤答要素のうち仮説と一致する割合を記録する。巻き戻りは要素ごとに格納の平坦 index を
+  mod 2**32 で写すので、バッチあたり要素数が 2**32 を割り切らない shape(境界がバッチ・行の途中に来る)でも同じ式
+- 誤答バッチの先頭側・末尾側それぞれ最大 N_DETAIL 個について、バッチ内のどこが誤答かを記録する(bad_batch_detail:
+  誤答要素数、誤答要素を含む出力の行の区間、バッチ内の平坦位置 r*N + c の最小・最大)
 - op = bmm_bwd(v2): out = bmm(a, b) を a, b に requires_grad を付けて計算し、上流の勾配 G(出力と同じ形、連続、a・b と同じ作り方の
   乱数で seed の系列は別)から torch.autograd.grad で grad_a, grad_b を得る。正解は CPU fp64 でバッチごとに out_i = a_i b_i、
   grad_a_i = G_i b_i^T、grad_b_i = a_i^T G_i。3 つの tensor を同じ誤差の定義と許容誤差で比べ、cls は 3 つのうち最悪
@@ -46,7 +49,7 @@ import platform
 import resource
 import sys
 import time
-from collections import Counter
+from collections import Counter, deque
 from concurrent.futures import ThreadPoolExecutor
 
 T0 = time.perf_counter()
@@ -55,7 +58,8 @@ import torch  # noqa: E402
 T_IMPORT = time.perf_counter() - T0
 
 DTYPES = {"fp32": torch.float32, "fp16": torch.float16, "bf16": torch.bfloat16}
-# index 符号化の周期(素数)。fp32 は 2**24 未満で厳密に表せ、B・バッチ内の平坦 index の範囲で一意。
+# index 符号化の周期(素数)。fp32 は 2**24 未満で厳密に表せ、B・バッチ内の平坦 index の範囲で一意
+# (fp32: B は --far の 3·2**16 + 1 まで、バッチ内の平坦 index は < 65536(*-250x* は < 62500)で、どちらも P = 1048573 未満)。
 # fp16 は 2048 まで整数が厳密。2 の冪のずれ(例: 65536 バッチの巻き戻り)が delta ≡ 0 に隠れないよう素数にする。
 # bf16 は仮数 7 bit なので整数が厳密なのは 256 まで(257 が最初に表せない整数。torch 2.14.0 で確認)→ 2**8 未満の最大の素数
 IDX_PERIOD = {"fp32": 1048573, "fp16": 2039, "bf16": 251}
@@ -65,6 +69,8 @@ CMP_ELEMS = 2**25  # 比較のチャンク(fp64 1 テンソルあたり 256MB)
 N_EVEN = 256  # サンプル比較の等間隔点の数
 DECODE_MAX = 2**16  # index 符号化の逆算に使う誤答要素の上限(1 ブロックあたり)
 N_HYP = 16  # 仮説検定に使う誤答バッチ数(先頭側・末尾側それぞれ)
+N_DETAIL = 4  # 誤答要素の位置を記録する誤答バッチ数(先頭側・末尾側それぞれ)
+N_DETAIL_ROWS = 8  # 1 バッチあたり記録する誤答行の区間の数の上限
 WRAP = 2**32  # 巻き戻り仮説の周期(要素数)
 POOL = ThreadPoolExecutor(8)  # バッチごとの乱数生成を並列化(結果はスレッド数によらない)
 
@@ -203,6 +209,29 @@ def storage_batch(spec, name, j):
     return gen_logical(spec, name, j - pad, j - pad + 1)[0].double()
 
 
+def storage_flat(spec, name, j):
+    """格納バッチ j の値(fp64)を格納の順に平らにした 1 次元 tensor(転置レイアウトなら格納 (c, r) の行優先)。"""
+    x = storage_batch(spec, name, j)
+    return (x.t() if layout_of(spec, name)["transposed"] else x).contiguous().view(-1)
+
+
+def wrapped_storage_flat(spec, name, j):
+    """格納バッチ j の各要素(格納の順)を、格納の平坦 index f の代わりに f mod WRAP から読んだ値(fp64)。
+    要素ごとに写すので、バッチあたり要素数 n が WRAP を割り切らない(巻き戻りがバッチ・行の途中に来る)場合も正しく、
+    1 バッチの読み先が 2 つ以上の格納バッチにまたがってよい。n が WRAP を割り切る場合は格納バッチ (j·n mod WRAP) / n を
+    そのまま読むのと同じ値になる(v2 の既存 shape の結果は変わらない)。mod なので 2 × WRAP より先でも、offset
+    レイアウトの大きな storage_offset でも同じ式(pad の領域に戻れば pad の定数を読む)。"""
+    r, c = op_shapes(spec)[name]
+    n = r * c
+    f = torch.arange(n, dtype=torch.int64).add_(j * n).remainder_(WRAP)
+    jb, q = f.div(n, rounding_mode="floor"), f.remainder(n)
+    out = torch.empty(n, dtype=torch.float64)
+    for jj in torch.unique(jb).tolist():
+        m = jb == jj
+        out[m] = storage_flat(spec, name, jj)[q[m]]
+    return out
+
+
 def to_storage(x, spec, name):
     """論理値 (n,r,c) → 格納(転置レイアウトなら (n,c,r) の連続)。"""
     return x.transpose(1, 2).contiguous() if layout_of(spec, name)["transposed"] else x
@@ -232,7 +261,8 @@ def sample_indices(spec, B):
     """等間隔 N_EVEN 点 + 先頭 4 + 末尾 8 + 各オペランドの平坦 index が 2**31 / 2**32 要素 / 2**32 バイトの倍数を
     またぐバッチ(およびタイル分割のタイル境界 floor(2**32/(M*N)) の倍数)の前後 ±2。倍数は B の範囲にある全部(--far の
     2 × 2**32、3 × 2**32 も入る)。offset レイアウトでは a, b の平坦 index を格納の先頭から数える(pad の分だけずらす)。
-    slice の 1 バッチのずれは v1 と同じく無視する(±2 の窓に入る)。"""
+    slice の 1 バッチのずれは v1 と同じく無視する(±2 の窓に入る)。バッチあたり要素数が境界を割り切らない shape では、
+    (k·q) // per は境界の要素を含むバッチ(境界がバッチの途中に来る)で、その前後 ±2 に次のバッチ(全体が境界の先)も入る。"""
     M, K, N = spec["M"], spec["K"], spec["N"]
     s = DTYPES[spec["dtype"]].itemsize
     S = set(range(min(4, B))) | set(range(max(0, B - 8), B))
@@ -265,6 +295,8 @@ class Stats:
         self.n_invalid = 0  # idx: 符号として解釈できない誤答要素(非整数・範囲外。0 は zero に数える)
         self.rc_pairs = Counter()  # idx rc (fp32): ((期待 r,c), (読まれた r,c)) の例
         self.bad_pos = None
+        self.detail_first = []  # 先頭側の誤答バッチ最大 N_DETAIL 個の位置(batch_detail)
+        self.detail_last = deque(maxlen=N_DETAIL)  # 末尾側(比較は B の昇順に進むので、最後に残ったものが末尾側)
 
     def add(self, i0, o, r):
         """o: デバイスの出力(CPU, fp64)、r: fp64 正解。形 (n, M, N)。"""
@@ -285,8 +317,28 @@ class Stats:
         self.n_bad_zero += int((bad & (o == 0)).sum())
         pos = bad.sum(dim=0)
         self.bad_pos = pos if self.bad_pos is None else self.bad_pos + pos
+        self.add_detail(i0, bad)
         if self.enc is not None:
             self.decode(o, r, bad)
+
+    @staticmethod
+    def batch_detail(i, m):
+        """誤答バッチ i の誤答要素の位置。m: (M, N) の bool。rows = 誤答要素を含む行の区間 [r0, r1)(最大 N_DETAIL_ROWS 個)、
+        pos_min / pos_max = バッチ内の平坦位置 r*N + c の最小・最大。"""
+        rows = ranges(m.any(dim=1).nonzero().flatten().tolist())
+        pos = m.flatten().nonzero().flatten()
+        return {"batch": i, "n_bad": int(pos.numel()), "n_rows": sum(b - a for a, b in rows),
+                "rows": [list(x) for x in rows[:N_DETAIL_ROWS]], "n_row_ranges": len(rows),
+                "pos_min": int(pos[0]), "pos_max": int(pos[-1])}
+
+    def add_detail(self, i0, bad):
+        """このブロックの誤答バッチのうち、先頭側の枠が空いている分と、末尾側の候補(ブロック内の最後の N_DETAIL 個)だけ位置を調べる。"""
+        bb = bad.flatten(1).any(dim=1).nonzero().flatten().tolist()
+        first = bb[:max(0, N_DETAIL - len(self.detail_first))]
+        last = bb[-N_DETAIL:]
+        det = {k: self.batch_detail(i0 + k, bad[k]) for k in dict.fromkeys(first + last)}
+        self.detail_first += [det[k] for k in first]
+        self.detail_last.extend(det[k] for k in last)
 
     def decode(self, o, r, bad):
         P = IDX_PERIOD[self.spec["dtype"]]
@@ -348,9 +400,13 @@ class Stats:
         if self.bad_pos is not None:
             res["bad_pos_rows"] = int((self.bad_pos.sum(dim=1) > 0).sum())
             res["bad_pos_cols"] = int((self.bad_pos.sum(dim=0) > 0).sum())
+            # 先頭側・末尾側の誤答バッチ(重複は 1 つ)を batch の昇順で
+            res["bad_batch_detail"] = sorted({d["batch"]: d for d in self.detail_first + list(self.detail_last)}.values(),
+                                             key=lambda d: d["batch"])
         if self.enc is not None:
             res["idx_period"] = IDX_PERIOD[self.spec["dtype"]]
             res["idx_delta_top"] = [[k, v] for k, v in self.delta.most_common(12)]
+            res["idx_delta_n_distinct"] = len(self.delta)  # 逆算した delta の異なる値の数(top 12 に入りきらない分の目安)
             res["idx_n_decoded"] = self.n_decoded
             res["idx_frac_invalid"] = self.n_invalid / self.n_decoded if self.n_decoded else 0.0
             res["idx_rc_examples"] = [[list(a), list(b), n] for (a, b), n in self.rc_pairs.most_common(12)]
@@ -360,22 +416,23 @@ class Stats:
 # ---------------------------------------------------------------------------- 読み違いの仮説
 
 def hyp_operand(spec, name, i, mode):
-    """論理バッチ i の位置でカーネルが読んだと仮定するオペランド値 (r, c) を CPU で作る。mode は次の集合:
-    stride: 転置 view の stride を無視し、格納 (c, r) の連続バッファを (r, c) として読む
-    wrap: 格納の平坦 index が 2**32 要素で巻き戻る(バッチあたり要素数が 2**32 を割り切る場合のみ)。mod なので
-          2 × 2**32 より先でも、offset レイアウトの大きな storage_offset でも同じ式(pad の領域に戻れば pad の定数を読む)
-    nooffset: storage_offset を無視して格納の先頭から読む(slice なら 1 バッチ前、offset なら pad_batches バッチ前 = pad の定数)"""
+    """論理バッチ i の位置でカーネルが読んだと仮定するオペランド値 (r, c) を CPU で作る(fp64、連続)。mode は次の集合:
+    stride: 転置 view の stride を無視し、格納 (c, r) の連続バッファを (r, c) として読む(バッチごとの読み替えで、
+            2**32 の位置には依存しない)
+    wrap: 格納の平坦 index f が WRAP = 2**32 要素で巻き戻る(f mod WRAP から読む)。要素ごとに写すので、バッチあたり
+          要素数が 2**32 を割り切らない場合も正しい(wrapped_storage_flat)。stride と組み合わせると、巻き戻った格納を
+          stride を無視して読む
+    nooffset: storage_offset を無視して格納の先頭から読む(slice なら 1 バッチ前、offset なら pad_batches バッチ前 = pad の定数)
+    どの mode でも読む位置は格納の平坦 index で決め、転置の有無は最後に (c, r) → (r, c) の読み方として適用する。"""
     r, c = op_shapes(spec)[name]
     L = layout_of(spec, name)
     j = i + L["pad"]  # 格納バッチ index
     if "nooffset" in mode:
         j -= L["pad"]
-    if "wrap" in mode and WRAP % (r * c) == 0:
-        j = (j * r * c % WRAP) // (r * c)
-    x = storage_batch(spec, name, j)
-    if "stride" in mode and L["transposed"]:
-        return x.t().contiguous().view(r, c)  # 格納 (c, r) を (r, c) として読む
-    return x
+    flat = wrapped_storage_flat(spec, name, j) if "wrap" in mode else storage_flat(spec, name, j)
+    if L["transposed"] and "stride" not in mode:
+        return flat.view(c, r).t().contiguous()  # 格納 (c, r) を転置 view として正しく読む = 論理値
+    return flat.view(r, c)  # 連続な格納はそのまま。stride: 格納 (c, r) を (r, c) として読む
 
 
 HYPS = {"stride": {"stride"}, "wrap": {"wrap"}, "wrap+stride": {"wrap", "stride"}, "nooffset": {"nooffset"}}
@@ -503,9 +560,11 @@ def run(spec, D: Device):
             res[f"{k}_contig"] = tensors[k].is_contiguous()
     res.update(D.mem())
     if spec.get("test_corrupt"):  # テスト専用: 比較が壊れた出力を検出できることの確認。行にも残る
+        tc = spec["test_corrupt"]  # {"batch": i, "tensor": 既定 out, "pos": バッチ内の平坦位置(任意。連続な tensor だけ)}
         with torch.no_grad():
-            tensors[spec["test_corrupt"].get("tensor", "out")][int(spec["test_corrupt"]["batch"])].add_(1)
-        res["test_corrupt"] = spec["test_corrupt"]
+            x = tensors[tc.get("tensor", "out")][int(tc["batch"])]
+            (x.view(-1)[int(tc["pos"]):] if "pos" in tc else x).add_(1)  # pos があればバッチ内の位置 pos 以降だけ
+        res["test_corrupt"] = tc
     res["out_shape"], res["out_stride"] = list(out.shape), list(out.stride())
 
     samp = sample_indices(spec, B)

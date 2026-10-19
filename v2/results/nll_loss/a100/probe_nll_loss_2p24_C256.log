@@ -1,0 +1,53 @@
+# run: probe_nll_loss_2p24_C256
+# date (UTC): 2026-09-24T08:18:37Z
+# GPU: NVIDIA A100-SXM4-80GB, 81920 MiB, 580.82.07
+# python / torch: Python 3.12.3 | torch 2.14.0+cu130 | torch.version.cuda 13.0
+# original script sha256: 938c6429fd3961472721f67ef93c0a418e1cfc1e051a50631ae8f619203db7d5  (repository v2/firstpass/probe_nll_loss.py at commit 1554967)
+# cwd: /content/work/v2
+# command: PYTHONUNBUFFERED=1 /content/venv/bin/python firstpass/probe_nll_loss.py '2**24' '256'
+#
+# The copy that was run was made on the VM with:
+#   sed -e 's/"mps"/"cuda"/g' -e 's/on MPS/on CUDA/g' orig/firstpass/probe_nll_loss.py > v2/firstpass/probe_nll_loss.py
+# diff -u (original from the repository vs. the copy that was run):
+--- orig/firstpass/probe_nll_loss.py	2026-09-24 08:15:51.839727840 +0000
++++ v2/firstpass/probe_nll_loss.py	2026-09-24 08:16:03.266405301 +0000
+@@ -7,13 +7,13 @@
+ xc = torch.rand(R, C).mul_(8).sub_(4)       # CPU で生成(MPS の乱数は使わない)。一様 [-4, 4)
+ tc = torch.randint(0, C, (R,))
+ lap(f"R={R} (2^{R.bit_length()-1}) C={C} numel={R*C} = 2^32 x {R*C/2**32:.4f}")
+-x, t = xc.to("mps"), tc.to("mps")
++x, t = xc.to("cuda"), tc.to("cuda")
+ ch = 2**20
+ for i in (0, (R // 2) // ch * ch, R - ch):   # 転送の確認(先頭・中央・末尾の塊)
+     assert torch.equal(x[i:i+ch].cpu(), xc[i:i+ch]), f"transfer mismatch at row {i}"
+ lap("transfer verified")
+ # 基準: 行ごとの損失を小さな塊ごとに MPS で(CPU の塊を送る。大きなテンソルは使わない)
+-ref_rows = torch.cat([F.cross_entropy(xc[i:i+ch].to("mps"), tc[i:i+ch].to("mps"), reduction="none").cpu() for i in range(0, R, ch)]).double()
++ref_rows = torch.cat([F.cross_entropy(xc[i:i+ch].to("cuda"), tc[i:i+ch].to("cuda"), reduction="none").cpu() for i in range(0, R, ch)]).double()
+ for i in (0, R - 2**14):                     # 基準の CPU float64 との照合(小さな塊)
+     c = F.cross_entropy(xc[i:i+2**14].double(), tc[i:i+2**14], reduction="none")
+     assert (c - ref_rows[i:i+2**14]).abs().max() < 1e-4, "chunk reference disagrees with CPU"
+@@ -34,4 +34,4 @@
+ nn_ = F.nll_loss(lsm, t, reduction="none").cpu().double()
+ lap(f"nll_loss none: sum/ref = {nn_.sum().item()/ref:.6f}, wrong rows = {int(((nn_ - ref_rows).abs() > 1e-4).sum())}")
+ g = -lsm.gather(1, t[:, None]).squeeze(1)
+-lap(f"gather then .sum() on MPS / ref = {g.sum().item()/ref:.6f}")
++lap(f"gather then .sum() on CUDA / ref = {g.sum().item()/ref:.6f}")
+
+# ---- stdout/stderr of the run ----
+[  31.2s] R=16777216 (2^24) C=256 numel=4294967296 = 2^32 x 1.0000
+[  37.9s] transfer verified
+[  42.6s] reference sum = 125142164.6
+[  42.7s] cross_entropy sum      / ref = 1.000000
+[  42.7s] cross_entropy mean * R / ref = 1.000000
+[  42.9s] cross_entropy none: sum/ref = 1.000000, wrong rows = 0
+[  49.2s] log_softmax max abs diff vs CPU (3 chunks) = 9.54e-07
+[  49.2s] nll_loss(log_softmax) sum  / ref = 1.000000
+[  49.3s] nll_loss none: sum/ref = 1.000000, wrong rows = 0
+[  49.4s] gather then .sum() on CUDA / ref = 1.000000
+# ---- end of run ----
+# exit code: 0
+# wall time: 51.575003141 s
+# max GPU memory.used seen by nvidia-smi (polled every 0.5 s): 35470 MiB
+# max resident set size of the process (/usr/bin/time -v): 18619884 kB
+# finished (UTC): 2026-09-24T08:19:31Z
