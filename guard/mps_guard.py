@@ -14,6 +14,15 @@ macOS 15 以上 + torch 2.5 以上の MPS では、2**32 要素を超えるテ�
 TorchDispatchMode で全 aten 演算を見るので、Python 側のオーバーヘッドが乗る。
 小さいテンソルを大量に回すループでは遅くなる(計測値は README)。
 環境変数 MPS_GUARD=0 で install() を無効化できる。
+
+判定の範囲:
+- 数えるのは各テンソルの論理要素数 t.numel() で、backing storage の大きさは見ない。大きいテンソルの小さい view は
+  それ自体では通る。大きいテンソルが guard のもとで作られれば、その生成演算の出力として止まる。install() より前に
+  device 上に作られていた 2**32 要素以上のテンソルと、その view は検出できない。
+- TorchDispatchMode は thread-local なので、install() が効くのは呼び出したスレッドだけ。_mode は module-level に
+  1 つなので、複数スレッドからの install() は未対応(2 本目は早期 return して何も入らない)。
+- nll_loss / cross_entropy の 2**31 要素超の誤り(pytorch#198471)はこの閾値の下で起きる。別の guard
+  mps_nll_guard.py で止める(併用できる)。
 """
 
 from __future__ import annotations
@@ -89,7 +98,8 @@ _mode: MPSSizeGuard | None = None
 
 
 def install() -> None:
-    """プロセス全体でガードを有効にする。冪等。MPS_GUARD=0 なら何もしない。"""
+    """呼び出したスレッドでガードを有効にする(TorchDispatchMode は thread-local)。冪等。MPS_GUARD=0 なら何もしない。
+    複数スレッドからの install() は未対応(module-level の _mode が 1 つだけ)。"""
     global _mode
     if _mode is not None or os.environ.get("MPS_GUARD") == "0":
         return
